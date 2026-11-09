@@ -1,0 +1,57 @@
+# Archivos que NO se suben a EAS Build. Igual que .gitignore pero SI incluye .env
+# para que la APK lleve la URL y la clave anon de Supabase.
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+example
+
+# generated native folders
+/ios
+/android
+
+
+
+# servidor local (Windows)
+herramientas/
+logs/
+ENLACE-PUBLICO.txt
+
+# Para EAS: se sube .env (EXPO_PUBLIC_*, datos publicos) pero no lo generado en el PC
+herramientas/
+logs/
+ENLACE-PUBLICO.txt

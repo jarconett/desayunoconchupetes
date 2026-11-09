@@ -105,6 +105,9 @@ El PC hace de servidor de la web y la publica en internet con un **túnel gratui
 >
 > Los registros están en `logs/` (servidor y túnel).
 
+#### Crear la APK de Android: `crear-apk.bat`
+Doble clic en **`crear-apk.bat`**. Compila la app en los servidores de Expo (**EAS Build, plan gratuito**; la primera vez pide iniciar sesión o crear cuenta en <https://expo.dev> y generar el *keystore*: responde **Y**), espera a que termine (10-30 min) y descarga la APK en **`<unidad>:\DesayunoConChupetes-APK`** (p. ej. `D:\DesayunoConChupetes-APK`) junto con `COMO-INSTALAR.txt` y el enlace de descarga directa para el móvil. La APK lleva dentro los datos de Supabase de `.env` (gracias a `.easignore`).
+
 #### Manual
 ```bash
 npm run web        # en el navegador
