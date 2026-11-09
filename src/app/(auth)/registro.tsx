@@ -88,7 +88,7 @@ export default function Registro() {
 
   return (
     <AuthShell title="Crea tu cuenta" subtitle="Para solicitar tu entrevista inicial y seguir la asesoría desde la app">
-      <Input label="Nombre y apellidos" value={name} onChangeText={setName} placeholder="Inés García" autoComplete="name" />
+      <Input label="Nombre y apellidos" value={name} onChangeText={setName} placeholder="Lucía Martínez Ruiz" autoComplete="name" />
       <Input label="Teléfono" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="600 000 000" autoComplete="tel" />
       <Input label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" placeholder="tu@email.com" />
       <Input label="Contraseña" value={password} onChangeText={setPassword} secureTextEntry hint="Mínimo 8 caracteres" autoComplete="new-password" />

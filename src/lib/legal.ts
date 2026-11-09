@@ -1,8 +1,9 @@
 // =====================================================================
 // TEXTOS LEGALES · Política de cookies y Protección de datos
 //
-// ⚠️ RELLENA los datos de RESPONSABLE con los de la titular del servicio
-// y haz que los revise una asesoría legal antes de publicar la app.
+// Datos de RESPONSABLE: de momento solo se muestran la marca y el correo.
+// Si más adelante se rellenan nombre, NIF o dirección, aparecerán solos en los
+// textos. Conviene que una asesoría legal revise los textos antes de publicar.
 // Si cambias un texto de forma sustancial, sube su versión: la app volverá
 // a pedir la aceptación a todas las personas usuarias.
 // =====================================================================
@@ -10,10 +11,12 @@
 import { CONTACT } from './theme';
 
 export const RESPONSABLE = {
-  /** Nombre y apellidos (o razón social) de la titular del servicio */
-  nombre: '[NOMBRE Y APELLIDOS DE LA ASESORA]',
-  nif: '[NIF]',
-  direccion: '[DIRECCIÓN POSTAL COMPLETA]',
+  /** Nombre y apellidos (o razón social) de la titular del servicio (opcional) */
+  nombre: '',
+  /** NIF (opcional) */
+  nif: '',
+  /** Dirección postal (opcional) */
+  direccion: '',
   email: CONTACT.email,
   marca: 'Desayuno con Chupetes',
 };
@@ -28,6 +31,12 @@ export interface LegalSection {
 }
 
 const R = RESPONSABLE;
+
+/** "Desayuno con Chupetes (Nombre, con NIF X, domicilio en Y), correo: …" según los datos rellenados */
+function responsable(): string {
+  const extra = [R.nombre, R.nif && `con NIF ${R.nif}`, R.direccion && `con domicilio en ${R.direccion}`].filter(Boolean).join(', ');
+  return `${R.marca}${extra ? ` (${extra})` : ''}, servicio de asesoría de sueño infantil, con correo electrónico de contacto ${R.email}`;
+}
 
 // ---------------------------------------------------------------------
 // POLÍTICA DE COOKIES
@@ -46,7 +55,7 @@ export const COOKIES_POLICY: LegalSection[] = [
   {
     title: '2. ¿Quién es responsable?',
     paragraphs: [
-      `${R.nombre}, con NIF ${R.nif} y domicilio en ${R.direccion}, titular del servicio ${R.marca}. Contacto: ${R.email}.`,
+      `${responsable()}.`,
     ],
   },
   {
@@ -98,7 +107,7 @@ export function proteccionDatos(childName: string): LegalSection[] {
     {
       title: '1. Responsable del tratamiento',
       paragraphs: [
-        `${R.nombre}, con NIF ${R.nif}, domicilio en ${R.direccion} y correo electrónico ${R.email}, titular del servicio de asesoría de sueño infantil ${R.marca} (en adelante, «la asesora»).`,
+        `${responsable()} (en adelante, «la asesora»).`,
       ],
     },
     {
@@ -157,7 +166,7 @@ export function proteccionDatos(childName: string): LegalSection[] {
     {
       title: '8. Vuestros derechos',
       paragraphs: [
-        `Podéis ejercer los derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad, así como retirar este consentimiento en cualquier momento (sin que afecte a la licitud del tratamiento anterior), escribiendo a ${R.email} o a la dirección postal indicada, acompañando una copia de vuestro documento de identidad.`,
+        `Podéis ejercer los derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad, así como retirar este consentimiento en cualquier momento (sin que afecte a la licitud del tratamiento anterior), escribiendo a ${R.email}${R.direccion ? ' o a la dirección postal indicada' : ''}, indicando qué derecho queréis ejercer.`,
         'Si consideráis que no hemos tratado bien vuestros datos, podéis presentar una reclamación ante la Agencia Española de Protección de Datos (www.aepd.es).',
       ],
     },

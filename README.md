@@ -169,7 +169,7 @@ Sube la carpeta `dist/` a cualquier hosting estático (Netlify, Vercel, Cloudfla
 ---
 
 ## ⚙️ Personalización
-- **Textos legales** (política de cookies y protección de datos) y **datos de la responsable** (nombre, NIF, dirección): [`src/lib/legal.ts`](src/lib/legal.ts). Rellena los campos entre corchetes y haz que los revise una asesoría legal. Si cambias un texto, sube su versión para que la app vuelva a pedir la aceptación.
+- **Textos legales** (política de cookies y protección de datos) y **datos de la responsable** (nombre, NIF, dirección): [`src/lib/legal.ts`](src/lib/legal.ts). Nombre, NIF y dirección son opcionales (si se rellenan, aparecen solos en los textos). Conviene que una asesoría legal revise los textos. Si cambias un texto, sube su versión para que la app vuelva a pedir la aceptación.
 - **Horarios de citas** (días, franjas, antelación): [`src/lib/config.ts`](src/lib/config.ts).
 - **Colores y contacto**: [`src/lib/theme.ts`](src/lib/theme.ts).
 - **Textos de los documentos** (ficha de sueño, históricos, diario, 1,2,3 DESCANSO, secciones del plan, recordatorios): [`src/lib/forms.ts`](src/lib/forms.ts).

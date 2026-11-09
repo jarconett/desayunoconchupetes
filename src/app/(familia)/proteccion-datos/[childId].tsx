@@ -137,7 +137,7 @@ export default function ProteccionDatos() {
             Firma del consentimiento
           </Txt>
           <Input label="Nombre y apellidos (madre, padre o tutor/a legal)" value={name} onChangeText={setName} autoComplete="name" />
-          <Input label="DNI / NIE" value={dni} onChangeText={setDni} autoCapitalize="characters" placeholder="12345678A" />
+          <Input label="DNI / NIE" value={dni} onChangeText={setDni} autoCapitalize="characters" placeholder="00000000T" />
           <CheckBox
             checked={accept}
             onChange={setAccept}

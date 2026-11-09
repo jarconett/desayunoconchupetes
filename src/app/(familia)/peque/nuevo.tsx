@@ -52,7 +52,7 @@ export default function NuevoPeque() {
   return (
     <Screen header={<HeroHeader back title={existing ? `Datos de ${existing.name}` : 'Añadir peque'} subtitle="Datos básicos para preparar la asesoría" />}>
       <Card>
-        <Input label="Nombre" value={name} onChangeText={setName} placeholder="Alejandro" />
+        <Input label="Nombre" value={name} onChangeText={setName} placeholder="Hugo" />
         <Txt variant="label">Sexo</Txt>
         <Chips
           options={[
@@ -87,7 +87,7 @@ export default function NuevoPeque() {
             </Txt>
           </View>
         ) : null}
-        <Input label="Nombres de los padres / madres" value={parents} onChangeText={setParents} placeholder="Inés y Alberto" />
+        <Input label="Nombres de los padres / madres" value={parents} onChangeText={setParents} placeholder="Lucía y Javier" />
         <Button title={existing ? 'Guardar cambios' : 'Añadir'} icon="check" onPress={save} disabled={!name.trim() || !birth} />
       </Card>
     </Screen>

@@ -375,7 +375,7 @@ function AdminTaskList() {
         <Txt variant="h3" style={{ marginBottom: 8 }}>
           Añadir tarea
         </Txt>
-        <Input value={title} onChangeText={setTitle} placeholder="Ej.: llamar a Inés para revisar la siesta" />
+        <Input value={title} onChangeText={setTitle} placeholder="Ej.: llamar a Lucía para revisar la siesta" />
         <Chips
           options={[{ value: '' as string, label: 'General' }, ...adm.children.filter((c) => c.status !== 'finalizada').map((c) => ({ value: c.id, label: c.name }))]}
           value={childId ?? ''}
