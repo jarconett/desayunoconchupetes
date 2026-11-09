@@ -14,14 +14,15 @@ $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
 $Raiz = Split-Path -Parent $PSScriptRoot
 $CarpetaApk = Join-Path ((Split-Path -Qualifier $Raiz) + '\') 'DesayunoConChupetes-APK'
-$Eas = @('--yes', 'eas-cli@latest')
 Set-Location $Raiz
 
 function Titulo($t) { Write-Host ''; Write-Host "== $t" -ForegroundColor Cyan }
 function Ok($t) { Write-Host "  [OK] $t" -ForegroundColor Green }
 function Info($t) { Write-Host "  [i]  $t" -ForegroundColor Gray }
 function Fallo($t) { Write-Host "  [X]  $t" -ForegroundColor Red; exit 1 }
-function EAS { npx @Eas @args }
+# Se llama a npx.cmd (no al npx.ps1 de Node 24, que pierde los argumentos
+# cuando se le pasan desde una funcion de PowerShell)
+function EAS { & npx.cmd --yes eas-cli@latest @args }
 
 Write-Host ''
 Write-Host '  ==================================================' -ForegroundColor Magenta
@@ -64,24 +65,29 @@ Ok 'Dependencias listas'
 
 # ---------- Cuenta de Expo ----------
 Titulo 'Cuenta de Expo'
-EAS whoami 2>$null | Out-Null
-if ($LASTEXITCODE -ne 0) {
+function Usuario-Expo {
+    $u = (EAS whoami 2>$null | Select-Object -First 1)
+    if ($LASTEXITCODE -ne 0 -or -not $u -or $u -match 'command line tool|Not logged in') { return $null }
+    return "$u".Trim()
+}
+$usuario = Usuario-Expo
+if (-not $usuario) {
     Write-Host '  Inicia sesion con tu cuenta de Expo (gratis en https://expo.dev/signup).' -ForegroundColor White
     EAS login
-    if ($LASTEXITCODE -ne 0) { Fallo 'No se pudo iniciar sesion en Expo.' }
+    $usuario = Usuario-Expo
+    if (-not $usuario) { Fallo 'No se pudo iniciar sesion en Expo.' }
 }
-$usuario = (EAS whoami 2>$null | Select-Object -First 1)
-Ok "Sesion iniciada: $usuario"
+Ok "Sesion iniciada en Expo como: $usuario"
 
 # ---------- Proyecto en Expo (solo la primera vez) ----------
-$appJson = Get-Content (Join-Path $Raiz 'app.json') -Raw | ConvertFrom-Json
-if (-not $appJson.expo.extra.eas.projectId) {
+function ProjectId { ((Get-Content (Join-Path $Raiz 'app.json') -Raw | ConvertFrom-Json).expo.extra.eas.projectId) }
+if (-not (ProjectId)) {
     Titulo 'Registrando el proyecto en Expo (solo la primera vez)'
     Info 'Responde Y (si) a las preguntas.'
     EAS init
-    if ($LASTEXITCODE -ne 0) { Fallo 'No se pudo registrar el proyecto en Expo.' }
+    if (-not (ProjectId)) { Fallo 'No se pudo registrar el proyecto en Expo (app.json sigue sin projectId).' }
 }
-Ok 'Proyecto registrado en Expo'
+Ok "Proyecto registrado en Expo ($(ProjectId))"
 
 # ---------- Compilar ----------
 Titulo 'Compilando la APK en Expo (10-30 minutos, depende de la cola)'
