@@ -13,6 +13,7 @@ const isNative = Platform.OS !== 'web';
 export const remindersSupported = isNative;
 
 const PREF_KEY = 'recordatorios_activos';
+const REMINDER_EMOJI: Record<string, string> = { nap_start: '😴', nap_end: '☀️', routine_start: '🛁', bedtime: '🌙' };
 const REMINDER_PREFIX = 'plan-';
 
 if (isNative) {
@@ -26,20 +27,34 @@ if (isNative) {
   });
 }
 
+const BRAND = '#8C7BB8';
+
 async function ensureChannels() {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync('avisos', {
     name: 'Avisos de la asesoría',
+    description: 'Citas, plan de sueño, resúmenes y mensajes de la asesora',
     importance: Notifications.AndroidImportance.HIGH,
-    lightColor: '#4A9DA8',
+    vibrationPattern: [0, 180, 120, 180],
+    lightColor: BRAND,
+    sound: 'default',
+    showBadge: true,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
   });
   await Notifications.setNotificationChannelAsync('recordatorios', {
     name: 'Recordatorios del plan de sueño',
+    description: 'Siesta, rutina de buenas noches y hora de dormir',
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 200, 150, 200],
-    lightColor: '#8C7BB8',
+    lightColor: BRAND,
+    sound: 'default',
+    showBadge: false,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
   });
 }
+
+/** Último error al registrar el token push (para el diagnóstico). */
+let lastPushError: string | null = null;
 
 export async function ensurePermission(): Promise<boolean> {
   if (!isNative) return false;
@@ -59,12 +74,17 @@ export async function registerPushToken(userId: string) {
     const projectId =
       Constants.expoConfig?.extra?.eas?.projectId || (Constants as unknown as { easConfig?: { projectId?: string } }).easConfig?.projectId;
     if (!projectId) {
-      console.warn('Falta extra.eas.projectId en app.json: ejecuta "npx eas-cli init" para activar las notificaciones push.');
+      lastPushError = 'Falta el projectId de Expo (app.json > extra.eas.projectId).';
       return;
     }
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
     await supabase.from('profiles').update({ push_token: token }).eq('id', userId);
+    lastPushError = null;
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    lastPushError = /firebase|FCM|google-services/i.test(msg)
+      ? 'Falta configurar Firebase (google-services.json) en la app de Android.'
+      : msg;
     console.warn('No se pudo registrar el token push', e);
   }
 }
@@ -124,7 +144,7 @@ export async function syncPlanReminders(sources: ReminderSource[]): Promise<numb
       await Notifications.scheduleNotificationAsync({
         identifier: `${REMINDER_PREFIX}${src.childId}-${r.key}`,
         content: {
-          title: `${src.childName} · ${r.label}`,
+          title: `${REMINDER_EMOJI[r.key] ?? '🌙'} ${src.childName} · ${r.label}`,
           body,
           sound: 'default',
           data: { link: '/plan' },
@@ -158,4 +178,50 @@ export function addNotificationReceivedListener(cb: (link: string | null) => voi
     cb(typeof link === 'string' ? link : null);
   });
   return () => sub.remove();
+}
+
+export interface NotificationDiagnostics {
+  supported: boolean;
+  permission: 'granted' | 'denied' | 'undetermined';
+  pushToken: boolean;
+  pushError: string | null;
+  scheduledReminders: number;
+}
+
+/** Estado de las notificaciones en este dispositivo. */
+export async function getNotificationDiagnostics(userId?: string): Promise<NotificationDiagnostics> {
+  if (!isNative) return { supported: false, permission: 'undetermined', pushToken: false, pushError: null, scheduledReminders: 0 };
+  if (userId) await registerPushToken(userId);
+  const perm = await Notifications.getPermissionsAsync();
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  let pushToken = false;
+  if (userId) {
+    const { data } = await supabase.from('profiles').select('push_token').eq('id', userId).maybeSingle();
+    pushToken = !!data?.push_token;
+  }
+  return {
+    supported: true,
+    permission: perm.granted ? 'granted' : perm.canAskAgain ? 'undetermined' : 'denied',
+    pushToken,
+    pushError: lastPushError,
+    scheduledReminders: scheduled.filter((n) => n.identifier.startsWith(REMINDER_PREFIX)).length,
+  };
+}
+
+/**
+ * Prueba: muestra una notificación local al momento (comprueba permisos, canal e
+ * icono) y pide al servidor un aviso push (comprueba Firebase/Expo).
+ */
+export async function sendTestNotifications(): Promise<{ local: boolean; push: 'push_enviado' | 'sin_token' | 'error'; error?: string }> {
+  let local = false;
+  if (isNative && (await ensurePermission())) {
+    await Notifications.scheduleNotificationAsync({
+      content: { title: '🌙 Desayuno con Chupetes', body: 'Así se verán los recordatorios del plan de sueño. ¡Todo listo!', sound: 'default' },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 2, channelId: 'recordatorios' },
+    });
+    local = true;
+  }
+  const { data, error } = await supabase.rpc('send_test_notification');
+  if (error) return { local, push: 'error', error: error.message };
+  return { local, push: data === 'push_enviado' ? 'push_enviado' : 'sin_token' };
 }

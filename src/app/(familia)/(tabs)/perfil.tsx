@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, View } from 'react-native';
 
+import { NotificationTestCard } from '@/components/notification-test';
 import { Badge, Button, Card, HeroHeader, Input, ListItem, Row, Screen, SectionTitle, Txt, notify } from '@/components/ui';
 import { useAuth } from '@/context/auth';
 import { useFamily } from '@/context/family';
@@ -76,6 +77,9 @@ export default function Perfil() {
         <Input label="Teléfono" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
         <Button title="Guardar" icon="content-save-outline" onPress={save} />
       </Card>
+
+      <SectionTitle icon="bell-ring-outline">Notificaciones</SectionTitle>
+      <NotificationTestCard />
 
       <SectionTitle icon="chat-processing-outline">Contacto</SectionTitle>
       <ListItem icon="email-outline" title="Escríbenos" subtitle={CONTACT.email} onPress={() => Linking.openURL(`mailto:${CONTACT.email}`)} />

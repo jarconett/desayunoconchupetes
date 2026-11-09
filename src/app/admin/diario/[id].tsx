@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { DiaryWeekTable, Legend, daySummary } from '@/components/diary';
+import { DiarySheet, sheetDaysFromDiaries } from '@/components/diary-sheet';
 import { Button, Card, Empty, HeroHeader, Loading, Row, Screen, SectionTitle, Txt } from '@/components/ui';
 import { useAdmin } from '@/context/admin';
 import { WEEK_DAYS } from '@/lib/forms';
-import { formatShortDate } from '@/lib/dates';
+import { ageInMonths, formatShortDate, parseISODate } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 import type { SleepDiary } from '@/lib/types';
@@ -54,6 +55,19 @@ export default function DiarioAdmin() {
       <Txt variant="small" style={{ marginTop: 6 }}>
         Medias de {days.length} {days.length === 1 ? 'día registrado' : 'días registrados'} (cada casilla = 1 hora; D.N./dormido cuenta como media hora de sueño).
       </Txt>
+
+      <SectionTitle
+        icon="table-large"
+        action={child ? <Button small variant="ghost" icon="calendar-range" title="Todas las semanas" onPress={() => router.push(`/admin/registro/${child.id}`)} /> : undefined}>
+        Registro de sueño (cómputo por categorías)
+      </SectionTitle>
+      <Card>
+        <DiarySheet
+          days={sheetDaysFromDiaries([diary])}
+          ageMonths={child ? ageInMonths(child.birth_date, diary.week_start ? parseISODate(diary.week_start) : new Date()) : null}
+          title={`${child?.name ?? 'peque'}-semana-${diary.week_number}`}
+        />
+      </Card>
 
       <SectionTitle icon="table">Tabla semanal</SectionTitle>
       <Card>

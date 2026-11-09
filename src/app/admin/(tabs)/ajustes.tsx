@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Linking, View } from 'react-native';
 
+import { NotificationTestCard } from '@/components/notification-test';
 import { Button, Card, HeroHeader, Input, ListItem, Screen, SectionTitle, Txt, notify } from '@/components/ui';
 import { useAdmin } from '@/context/admin';
 import { useAuth } from '@/context/auth';
@@ -58,6 +59,9 @@ export default function Ajustes() {
           Puedes cambiarlo en src/lib/config.ts. Desde la Agenda puedes crear citas a cualquier hora.
         </Txt>
       </Card>
+
+      <SectionTitle icon="bell-ring-outline">Notificaciones</SectionTitle>
+      <NotificationTestCard />
 
       <SectionTitle icon="chat-processing-outline">Contacto del servicio</SectionTitle>
       <ListItem icon="email-outline" title="Email" subtitle={CONTACT.email} onPress={() => Linking.openURL(`mailto:${CONTACT.email}`)} />

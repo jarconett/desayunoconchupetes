@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { CookieConsentGate } from '@/components/legal';
 import { AuthProvider } from '@/context/auth';
 import { addNotificationTapListener } from '@/lib/notifications';
 import { colors } from '@/lib/theme';
@@ -39,6 +40,7 @@ export default function RootLayout() {
       <AuthProvider>
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+        <CookieConsentGate />
       </AuthProvider>
     </SafeAreaProvider>
   );

@@ -25,6 +25,19 @@ export default function NinoDetalle() {
   const [startDate, setStartDate] = useState<string>(toISODate(addDays(startOfWeek(new Date()), 7)));
   const [weeks, setWeeks] = useState(6);
   const [taskTitle, setTaskTitle] = useState('');
+  const [consents, setConsents] = useState<{ version: string; signer_name: string | null; signer_dni: string | null; created_at: string }[] | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    supabase
+      .from('consents')
+      .select('version, signer_name, signer_dni, created_at')
+      .eq('child_id', id)
+      .eq('kind', 'proteccion_datos')
+      .eq('accepted', true)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setConsents(data ?? []));
+  }, [id, adm.requests]);
 
   useEffect(() => {
     if (!id) return;
@@ -180,6 +193,25 @@ export default function NinoDetalle() {
       )}
 
       <SectionTitle icon="folder-account-outline">Documentos</SectionTitle>
+      {(() => {
+        const main = (consents ?? []).find((c) => !c.version.endsWith(':estudios'));
+        const studies = (consents ?? []).some((c) => c.version.endsWith(':estudios'));
+        return (
+          <ListItem
+            icon={main ? 'shield-check-outline' : 'shield-alert-outline'}
+            iconBg={main ? colors.mint : colors.rose}
+            iconColor={main ? colors.mintDark : colors.roseDark}
+            title="Protección de datos"
+            subtitle={
+              consents === null
+                ? 'Cargando…'
+                : main
+                  ? `Firmado por ${main.signer_name ?? '—'}${main.signer_dni ? ` (${main.signer_dni})` : ''} el ${formatShortDate(main.created_at)}${studies ? ' · autoriza uso anonimizado para estudios' : ' · no autoriza estudios'}`
+                  : 'Sin firmar (se firma al solicitar la intervención)'
+            }
+          />
+        );
+      })()}
       <ListItem
         icon="clipboard-text-outline"
         iconBg={colors.butter}
@@ -217,7 +249,11 @@ export default function NinoDetalle() {
         </Card>
       ) : null}
 
-      <SectionTitle icon="notebook-heart-outline">Diarios de sueño</SectionTitle>
+      <SectionTitle
+        icon="notebook-heart-outline"
+        action={diaries.length ? <Button small variant="ghost" icon="table-large" title="Registro completo" onPress={() => router.push(`/admin/registro/${child.id}`)} /> : undefined}>
+        Diarios de sueño
+      </SectionTitle>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {Array.from({ length: child.intervention_weeks }, (_, i) => i + 1).map((w) => {
           const d = diaries.find((x) => x.week_number === w);

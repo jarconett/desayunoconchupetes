@@ -68,8 +68,12 @@ supabase/migrations/   esquema de base de datos, permisos y avisos automáticos
 
 ### 1. Crear el proyecto de Supabase
 1. Crea una cuenta y un proyecto en <https://supabase.com> (región Europa).
-2. Ve a **SQL Editor**, pega el contenido de [`supabase/migrations/20261109000000_esquema_inicial.sql`](supabase/migrations/20261109000000_esquema_inicial.sql) y ejecútalo.
-3. En **Authentication → URL Configuration** añade como *Redirect URL* la URL de la web (p. ej. `https://tu-dominio.com/*`) y `desayunoconchupetes://*`.
+2. Ve a **SQL Editor** y ejecuta, **en este orden**, el contenido de:
+   1. [`supabase/migrations/20261109000000_esquema_inicial.sql`](supabase/migrations/20261109000000_esquema_inicial.sql)
+   2. [`supabase/migrations/20261110000000_consentimientos_y_avisos.sql`](supabase/migrations/20261110000000_consentimientos_y_avisos.sql) (consentimientos de cookies y protección de datos, arreglo de avisos y notificación de prueba)
+3. En **Authentication → URL Configuration**:
+   - **Site URL**: `desayunoconchupetes://` (o la dirección fija de la web si la tienes). Es a donde lleva un enlace de correo cuando no se indica otra cosa; el valor por defecto (`http://localhost:3000`) provoca el error *Cannot GET /*.
+   - **Redirect URLs**: `desayunoconchupetes://**`, `https://*.trycloudflare.com/**` y `http://localhost:8080/**` (y tu dominio, si lo tienes).
 4. (Opcional) En **Authentication → Email Templates** traduce los correos al español.
 
 > 🔐 La cuenta que se registre con **desayunoconchupetes@gmail.com** se crea automáticamente como **administradora**. Desde *Usuarios* puede dar acceso de administradora a otras personas.
@@ -85,6 +89,13 @@ El correo integrado de Supabase **solo envía a los miembros del equipo del proy
    <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
    <p>Escríbelo en la app junto con tu nueva contraseña. Caduca en 1 hora.</p>
    <p>Si no lo has pedido tú, ignora este correo.</p>
+   ```
+4. **Templates → Confirm signup**: al crear la cuenta la app también pide un **código** (funciona igual en web y móvil). Asunto: `Confirma tu cuenta de Desayuno con Chupetes`. Cuerpo:
+   ```html
+   <h2>Desayuno con Chupetes</h2>
+   <p>¡Bienvenida/o! Tu código para activar la cuenta es:</p>
+   <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
+   <p>Escríbelo en la app. Si estás en el mismo dispositivo también puedes <a href="{{ .ConfirmationURL }}">pulsar aquí</a>.</p>
    ```
 
 ### 2. Configurar la app
@@ -137,7 +148,17 @@ npx eas-cli@latest build -p android --profile production   # Google Play
 npx eas-cli@latest build -p ios --profile production       # App Store (requiere cuenta de Apple Developer)
 npx eas-cli@latest submit -p android   # / -p ios  para publicar en las tiendas
 ```
-Para Android hay que subir las credenciales de FCM en expo.dev (Credentials → *FCM V1 service account key*); para iOS, EAS gestiona la clave APNs.
+Para iOS, EAS gestiona la clave APNs.
+
+#### Notificaciones push en Android (Firebase, gratis)
+Los **recordatorios del plan** son locales y funcionan sin esto. Los **avisos de la asesora** (cita confirmada, plan actualizado, resúmenes…) llegan por push y en Android necesitan Firebase:
+1. <https://console.firebase.google.com> → *Crear proyecto* (sin Analytics).
+2. *Añadir app → Android*, nombre del paquete **`com.desayunoconchupetes.app`** → descarga **`google-services.json`** y guárdalo en la raíz del proyecto (al lado de `app.json`). `app.config.js` lo detecta solo.
+3. Firebase → ⚙️ *Configuración del proyecto → Cuentas de servicio → Generar nueva clave privada* (descarga un `.json`).
+4. <https://expo.dev> → tu proyecto → *Credentials → Android → com.desayunoconchupetes.app → FCM V1 service account key → Add* → sube ese `.json`.
+5. Vuelve a crear la APK (`crear-apk.bat`) e instálala. En la app: *Perfil/Ajustes → Probar notificaciones*.
+
+> En Xiaomi/Redmi/POCO: Ajustes → Aplicaciones → Desayuno con Chupetes → *Inicio automático* activado, *Ahorro de batería: Sin restricciones* y en Notificaciones permite *Pantalla de bloqueo* y *Notificaciones flotantes*.
 
 ### 5. Publicar la web
 ```bash
@@ -148,6 +169,7 @@ Sube la carpeta `dist/` a cualquier hosting estático (Netlify, Vercel, Cloudfla
 ---
 
 ## ⚙️ Personalización
+- **Textos legales** (política de cookies y protección de datos) y **datos de la responsable** (nombre, NIF, dirección): [`src/lib/legal.ts`](src/lib/legal.ts). Rellena los campos entre corchetes y haz que los revise una asesoría legal. Si cambias un texto, sube su versión para que la app vuelva a pedir la aceptación.
 - **Horarios de citas** (días, franjas, antelación): [`src/lib/config.ts`](src/lib/config.ts).
 - **Colores y contacto**: [`src/lib/theme.ts`](src/lib/theme.ts).
 - **Textos de los documentos** (ficha de sueño, históricos, diario, 1,2,3 DESCANSO, secciones del plan, recordatorios): [`src/lib/forms.ts`](src/lib/forms.ts).

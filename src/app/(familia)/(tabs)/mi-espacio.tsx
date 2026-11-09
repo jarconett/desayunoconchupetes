@@ -3,12 +3,11 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { WeekIndicator } from '@/components/progress';
-import { Badge, Button, Card, Empty, HeroHeader, IconBubble, Input, ListItem, Row, Screen, SectionTitle, Txt, notify } from '@/components/ui';
+import { Badge, Button, Card, Empty, HeroHeader, IconBubble, Input, ListItem, Row, Screen, SectionTitle, Txt } from '@/components/ui';
 import { useAuth } from '@/context/auth';
 import { useFamily } from '@/context/family';
 import { DESCANSO_DOC_KEY, PATHOLOGY_RANGE_LABEL } from '@/lib/forms';
 import { formatShortDate, interventionWeek, pathologyRangeFor } from '@/lib/dates';
-import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 import type { Child } from '@/lib/types';
 
@@ -80,6 +79,21 @@ function ChildSpace({ child, multiple }: { child: Child; multiple: boolean }) {
         locked={!plan}
         onPress={() => router.push('/plan')}
       />
+      <ListItem
+        icon="shield-account-outline"
+        iconBg={colors.mint}
+        iconColor={colors.mintDark}
+        title="Protección de datos"
+        subtitle="Información y consentimiento firmado"
+        onPress={() => router.push(`/proteccion-datos/${child.id}`)}
+      />
+      <ListItem
+        icon="cookie-outline"
+        iconBg={colors.butter}
+        iconColor={colors.butterDark}
+        title="Política de cookies"
+        onPress={() => router.push('/politica-cookies')}
+      />
 
       <SectionTitle icon="pencil-outline">Para completar</SectionTitle>
       <ListItem
@@ -150,16 +164,10 @@ function InterventionRequestCard({ child }: { child: Child }) {
     (a) => a.child_id === child.id && a.kind === 'entrevista_inicial' && (a.status === 'confirmada' || a.status === 'realizada'),
   );
 
-  const send = async () => {
+  // Antes de solicitar la intervención hay que leer y firmar el documento de protección de datos
+  const send = () => {
     if (!session) return;
-    const { error } = await supabase.from('intervention_requests').insert({
-      child_id: child.id,
-      family_id: session.user.id,
-      message: message.trim() || null,
-    });
-    if (error) notify('Error', error.message);
-    else notify('¡Solicitud enviada!', 'La asesora la revisará y te avisaremos cuando se desbloqueen tus documentos.');
-    fam.reload();
+    router.push({ pathname: '/proteccion-datos/[childId]', params: { childId: child.id, solicitar: '1', mensaje: message.trim() } });
   };
 
   if (req?.status === 'pendiente') {
@@ -198,6 +206,9 @@ function InterventionRequestCard({ child }: { child: Child }) {
         <View style={{ marginTop: 12 }}>
           <Input value={message} onChangeText={setMessage} placeholder="Mensaje para la asesora (opcional)" multiline />
           <Button title="Solicitar la intervención" icon="heart-outline" onPress={send} />
+          <Txt variant="small" style={{ marginTop: 6 }}>
+            Antes de enviarla te pediremos que leas y firmes el documento de protección de datos.
+          </Txt>
         </View>
       ) : null}
     </Card>
