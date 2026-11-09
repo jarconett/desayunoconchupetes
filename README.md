@@ -82,6 +82,20 @@ cp .env.example .env   # y rellena EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABA
 Los valores están en Supabase → **Project Settings → API**.
 
 ### 3. Probar en local
+
+#### Opción fácil en Windows: `iniciar-desayunoconchupetes.bat`
+1. Descarga solo el archivo [`iniciar-desayunoconchupetes.bat`](iniciar-desayunoconchupetes.bat) (botón *Download raw file*) y guárdalo en una carpeta, por ejemplo `Documentos\DesayunoConChupetes`.
+2. Haz doble clic. El script:
+   - comprueba que tienes **Node.js 20 o superior** (si no, ofrece instalarlo con `winget`),
+   - descarga el proyecto de GitHub (con Git o, si no está instalado, como ZIP) en la subcarpeta `desayunoconchupetes`, o lo **actualiza** si ya existe,
+   - instala las dependencias (solo la primera vez),
+   - pide la **URL y la clave anon de Supabase** la primera vez y las guarda en `.env`,
+   - muestra un menú: **1** abrir en el navegador (`http://localhost:8081`), **2** probar en el móvil con Expo Go (QR, misma WiFi), **3** generar la web para publicar (`dist/`), **4** cambiar los datos de Supabase.
+3. Las siguientes veces arranca directamente; si no hay internet usa la versión ya descargada.
+
+> La app guarda los datos en Supabase, así que el PC necesita internet para iniciar sesión y sincronizar.
+
+#### Manual
 ```bash
 npm run web        # en el navegador
 npm start          # escanea el QR con Expo Go (Android/iOS)
