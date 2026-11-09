@@ -1,0 +1,101 @@
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
+
+import { DiaryWeekTable, Legend, daySummary } from '@/components/diary';
+import { Button, Card, Empty, HeroHeader, Loading, Row, Screen, SectionTitle, Txt } from '@/components/ui';
+import { useAdmin } from '@/context/admin';
+import { WEEK_DAYS } from '@/lib/forms';
+import { formatShortDate } from '@/lib/dates';
+import { supabase } from '@/lib/supabase';
+import { colors } from '@/lib/theme';
+import type { SleepDiary } from '@/lib/types';
+
+export default function DiarioAdmin() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const adm = useAdmin();
+  const [diary, setDiary] = useState<SleepDiary | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from('sleep_diaries')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setDiary(data as SleepDiary | null);
+        setLoaded(true);
+      });
+  }, [id]);
+
+  if (!loaded) return <Loading />;
+  if (!diary) return <Screen header={<HeroHeader back title="Diario" />}><Empty title="No encontrado" /></Screen>;
+  const child = adm.children.find((c) => c.id === diary.child_id);
+
+  const days = WEEK_DAYS.map((_, i) => daySummary(diary.entries, i)).filter((d) => d.filled > 0);
+  const avg = (k: 'noche' | 'siesta' | 'total' | 'despertares') => (days.length ? (days.reduce((s, d) => s + d[k], 0) / days.length).toFixed(1) : '—');
+
+  return (
+    <Screen
+      header={
+        <HeroHeader
+          back
+          title={`Diario · semana ${diary.week_number}`}
+          subtitle={`${child?.name ?? ''}${diary.week_start ? ` · semana del ${formatShortDate(diary.week_start)}` : ''}${diary.submitted_at ? ` · enviado ${formatShortDate(diary.submitted_at)}` : ' · borrador'}`}
+        />
+      }>
+      <Row style={{ flexWrap: 'wrap' }} gap={8}>
+        <Metric label="Sueño total / día" value={`${avg('total')} h`} color={colors.nightSoft} />
+        <Metric label="Nocturno" value={`${avg('noche')} h`} color={colors.lavender} />
+        <Metric label="Siestas" value={`${avg('siesta')} h`} color={colors.mint} />
+        <Metric label="Despertares / noche" value={avg('despertares')} color={colors.rose} />
+      </Row>
+      <Txt variant="small" style={{ marginTop: 6 }}>
+        Medias de {days.length} {days.length === 1 ? 'día registrado' : 'días registrados'} (cada casilla = 1 hora; D.N./dormido cuenta como media hora de sueño).
+      </Txt>
+
+      <SectionTitle icon="table">Tabla semanal</SectionTitle>
+      <Card>
+        <DiaryWeekTable entries={diary.entries} />
+        <View style={{ marginTop: 12 }}>
+          <Legend />
+        </View>
+      </Card>
+
+      {Object.entries(diary.day_notes ?? {}).some(([, v]) => v?.trim()) || diary.notes ? (
+        <>
+          <SectionTitle icon="comment-text-outline">Notas de la familia</SectionTitle>
+          <Card>
+            {Object.entries(diary.day_notes ?? {})
+              .filter(([, v]) => v?.trim())
+              .map(([d, v]) => (
+                <Txt key={d} style={{ marginBottom: 6 }}>
+                  <Txt style={{ fontFamily: 'Quicksand_700Bold' }}>{WEEK_DAYS[Number(d)]}: </Txt>
+                  {v}
+                </Txt>
+              ))}
+            {diary.notes ? <Txt style={{ marginTop: 6 }}>{diary.notes}</Txt> : null}
+          </Card>
+        </>
+      ) : null}
+
+      {child ? (
+        <Button title="Ir al plan de sueño" icon="file-document-edit-outline" style={{ marginTop: 18 }} onPress={() => router.push(`/admin/plan/${child.id}`)} />
+      ) : null}
+    </Screen>
+  );
+}
+
+function Metric({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <View style={{ flexGrow: 1, flexBasis: 140, backgroundColor: color, borderRadius: 16, padding: 12 }}>
+      <Txt variant="small" color={colors.night}>
+        {label}
+      </Txt>
+      <Txt variant="h2" color={colors.night}>
+        {value}
+      </Txt>
+    </View>
+  );
+}
