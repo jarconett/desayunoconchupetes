@@ -27,7 +27,7 @@ export default function RegistroCompleto() {
 
   if (!diaries) return <Loading />;
   return (
-    <Screen header={<HeroHeader back title="Registro de sueño" subtitle={`${child?.name ?? ''} · todas las semanas`} />}>
+    <Screen wide header={<HeroHeader back title="Registro de sueño" subtitle={`${child?.name ?? ''} · todas las semanas`} />}>
       {diaries.length === 0 ? (
         <Empty icon="notebook-outline" title="Sin diarios todavía" text="Cuando la familia rellene el diario de sueño aparecerá aquí." />
       ) : (

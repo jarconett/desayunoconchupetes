@@ -79,12 +79,15 @@ export function Screen({
   onRefresh,
   header,
   padded = true,
+  wide,
 }: {
   children: ReactNode;
   refreshing?: boolean;
   onRefresh?: () => void;
   header?: ReactNode;
   padded?: boolean;
+  /** Más ancho en pantallas grandes (tablas como el registro de sueño) */
+  wide?: boolean;
 }) {
   // Hueco de la barra de navegación del sistema (Android con botones, iPhone sin botón)
   const insets = useSafeAreaInsets();
@@ -97,7 +100,7 @@ export function Screen({
           onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.primary} /> : undefined
         }>
         {header}
-        <View style={[styles.content, padded && { paddingHorizontal: 16 }]}>{children}</View>
+        <View style={[styles.content, wide && { maxWidth: 1320 }, padded && { paddingHorizontal: 16 }]}>{children}</View>
       </ScrollView>
     </View>
   );

@@ -32,7 +32,7 @@ export default function DiarioAdmin() {
   }, [id]);
 
   if (!loaded) return <Loading />;
-  if (!diary) return <Screen header={<HeroHeader back title="Diario" />}><Empty title="No encontrado" /></Screen>;
+  if (!diary) return <Screen wide header={<HeroHeader back title="Diario" />}><Empty title="No encontrado" /></Screen>;
   const child = adm.children.find((c) => c.id === diary.child_id);
 
   const days = WEEK_DAYS.map((_, i) => daySummary(diary.entries, i)).filter((d) => d.filled > 0);
