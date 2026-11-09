@@ -52,3 +52,6 @@ ENLACE-PUBLICO.txt
 
 # capturas de vista previa
 .vista-previa/
+
+# version que escribe crear-apk.ps1 durante la compilacion
+build-info.json

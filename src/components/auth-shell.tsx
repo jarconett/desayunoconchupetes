@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CONTACT, colors } from '@/lib/theme';
 
+import { VersionInfo } from './version-info';
+
 import { Card, Icon, Logo, Row, Txt } from './ui';
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
@@ -45,6 +47,9 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
                 </Row>
               </Pressable>
             </Row>
+            <View style={{ marginTop: 10 }}>
+              <VersionInfo center />
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

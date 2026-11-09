@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Linking, View } from 'react-native';
 
 import { NotificationTestCard } from '@/components/notification-test';
+import { VersionInfo } from '@/components/version-info';
 import { Badge, Button, Card, HeroHeader, Input, ListItem, Row, Screen, SectionTitle, Txt, notify } from '@/components/ui';
 import { useAuth } from '@/context/auth';
 import { useFamily } from '@/context/family';
@@ -88,6 +89,10 @@ export default function Perfil() {
       <View style={{ marginTop: 20 }}>
         <Button title="Cerrar sesión" variant="danger" icon="logout" onPress={signOut} />
       </View>
+      <SectionTitle icon="information-outline">Versión de la app</SectionTitle>
+      <Card>
+        <VersionInfo detailed />
+      </Card>
     </Screen>
   );
 }

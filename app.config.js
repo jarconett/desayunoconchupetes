@@ -4,7 +4,33 @@
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Versión instalada (se muestra en Perfil/Ajustes):
+ * 1) build-info.json, que escribe crear-apk.ps1 antes de compilar en Expo
+ *    (en los servidores de Expo no hay historial de git);
+ * 2) si no existe, se consulta git directamente (versión web en este PC).
+ */
+function buildInfo() {
+  const file = path.join(__dirname, 'build-info.json');
+  if (fs.existsSync(file)) {
+    try {
+      return JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch {
+      // archivo dañado: se intenta con git
+    }
+  }
+  try {
+    const { execSync } = require('child_process');
+    const git = (args) => execSync(`git ${args}`, { cwd: __dirname, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    return { commit: git('rev-parse --short HEAD'), commitDate: git('log -1 --format=%cI') };
+  } catch {
+    return {};
+  }
+}
+
 module.exports = ({ config }) => {
+  config.extra = { ...config.extra, buildInfo: { ...buildInfo(), builtAt: new Date().toISOString() } };
+
   // Notificaciones: icono en silueta blanca (Android solo usa la transparencia)
   // y color de la marca para el icono y el nombre de la app.
   config.plugins = (config.plugins ?? []).map((p) => {

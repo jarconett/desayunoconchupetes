@@ -102,8 +102,16 @@ if ($version) { Info "Se compila la version $version" }
 Titulo 'Compilando la APK en Expo (10-30 minutos, depende de la cola)'
 Info 'La primera vez pregunta si generar un "Android Keystore": responde Y.'
 Info 'Puedes seguir el progreso en el enlace que aparece (expo.dev).'
+# La version (commit) se guarda en build-info.json para que la app la muestre:
+# en los servidores de Expo no hay historial de git. Se borra al terminar.
+$buildInfo = Join-Path $Raiz 'build-info.json'
+$commit = (git -C $Raiz rev-parse --short HEAD 2>$null)
+$commitDate = (git -C $Raiz log -1 --format=%cI 2>$null)
+if ($commit) { [IO.File]::WriteAllText($buildInfo, (@{ commit = "$commit".Trim(); commitDate = "$commitDate".Trim() } | ConvertTo-Json -Compress)) }
 EAS build --platform android --profile preview --wait
-if ($LASTEXITCODE -ne 0) { Fallo 'La compilacion ha fallado. Revisa el enlace de expo.dev que aparece arriba.' }
+$codigoBuild = $LASTEXITCODE
+Remove-Item $buildInfo -ErrorAction SilentlyContinue
+if ($codigoBuild -ne 0) { Fallo 'La compilacion ha fallado. Revisa el enlace de expo.dev que aparece arriba.' }
 
 # ---------- Descargar ----------
 Titulo 'Descargando la APK'

@@ -147,7 +147,7 @@ $marcaBuild = Join-Path $dist '.huella-build'
 $huellaAnterior = if (Test-Path $marcaBuild) { (Get-Content $marcaBuild -Raw).Trim() } else { '' }
 if (-not (Test-Path (Join-Path $dist 'index.html')) -or $huella -ne $huellaAnterior) {
     Info 'Generando la web (1-3 minutos)...'
-    npx expo export --platform web
+    npx expo export --platform web --clear
     if ($LASTEXITCODE -ne 0) { Fallo 'Error al generar la web.' }
     [IO.File]::WriteAllText($marcaBuild, $huella)
     Ok 'Web generada'

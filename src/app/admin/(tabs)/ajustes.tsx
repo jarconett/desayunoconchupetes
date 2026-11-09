@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Linking, View } from 'react-native';
 
 import { NotificationTestCard } from '@/components/notification-test';
+import { VersionInfo } from '@/components/version-info';
 import { Button, Card, HeroHeader, Input, ListItem, Screen, SectionTitle, Txt, notify } from '@/components/ui';
 import { useAdmin } from '@/context/admin';
 import { useAuth } from '@/context/auth';
@@ -70,6 +71,10 @@ export default function Ajustes() {
       <View style={{ marginTop: 20 }}>
         <Button title="Cerrar sesión" variant="danger" icon="logout" onPress={signOut} />
       </View>
+      <SectionTitle icon="information-outline">Versión de la app</SectionTitle>
+      <Card>
+        <VersionInfo detailed />
+      </Card>
     </Screen>
   );
 }
