@@ -211,7 +211,7 @@ export const DIARY_HOURS = Array.from({ length: 24 }, (_, i) => (i + 8) % 24);
 export const hourLabel = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 export const DIARY_INSTRUCTIONS =
-  'Rellenad esta tabla poniendo a qué horas del día está despierto, si hace siesta, la hora a la que empezáis la rutina antes de dormir y hasta qué hora dura, la hora a la que se va a dormir y los despertares nocturnos. Si el despertar nocturno dura menos de una hora, usad "D.N. / dormido".';
+  'Rellenad esta tabla poniendo a qué horas del día está despierto, si hace siesta, la hora a la que empezáis la rutina antes de dormir y hasta qué hora dura, la hora a la que se va a dormir y los despertares nocturnos. Si el despertar nocturno dura menos de una hora, usad "D.N. / dormido". Cada hora se divide en cuartos (15, 30, 45 y 60 minutos): tocad la hora para marcarla entera o solo los cuartos que correspondan.';
 
 export const SLEEP_SIGNALS = [
   {

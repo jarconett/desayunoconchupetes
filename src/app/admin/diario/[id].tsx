@@ -7,6 +7,7 @@ import { DiarySheet, sheetDaysFromDiaries } from '@/components/diary-sheet';
 import { Button, Card, Empty, HeroHeader, Loading, Row, Screen, SectionTitle, Txt } from '@/components/ui';
 import { useAdmin } from '@/context/admin';
 import { WEEK_DAYS } from '@/lib/forms';
+import { formatDuration } from '@/lib/diary-slots';
 import { ageInMonths, formatShortDate, parseISODate } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
@@ -35,7 +36,8 @@ export default function DiarioAdmin() {
   const child = adm.children.find((c) => c.id === diary.child_id);
 
   const days = WEEK_DAYS.map((_, i) => daySummary(diary.entries, i)).filter((d) => d.filled > 0);
-  const avg = (k: 'noche' | 'siesta' | 'total' | 'despertares') => (days.length ? (days.reduce((s, d) => s + d[k], 0) / days.length).toFixed(1) : '—');
+  const mean = (k: 'noche' | 'siesta' | 'total' | 'despertares') => (days.length ? days.reduce((s, d) => s + d[k], 0) / days.length : null);
+  const avg = (k: 'noche' | 'siesta' | 'total') => (mean(k) == null ? '—' : formatDuration(mean(k)!));
 
   return (
     <Screen
@@ -47,13 +49,13 @@ export default function DiarioAdmin() {
         />
       }>
       <Row style={{ flexWrap: 'wrap' }} gap={8}>
-        <Metric label="Sueño total / día" value={`${avg('total')} h`} color={colors.nightSoft} />
-        <Metric label="Nocturno" value={`${avg('noche')} h`} color={colors.lavender} />
-        <Metric label="Siestas" value={`${avg('siesta')} h`} color={colors.mint} />
-        <Metric label="Despertares / noche" value={avg('despertares')} color={colors.rose} />
+        <Metric label="Sueño total / día" value={avg('total')} color={colors.nightSoft} />
+        <Metric label="Nocturno" value={avg('noche')} color={colors.lavender} />
+        <Metric label="Siestas" value={avg('siesta')} color={colors.mint} />
+        <Metric label="Despertares / noche" value={mean('despertares') == null ? '—' : mean('despertares')!.toFixed(1).replace('.', ',')} color={colors.rose} />
       </Row>
       <Txt variant="small" style={{ marginTop: 6 }}>
-        Medias de {days.length} {days.length === 1 ? 'día registrado' : 'días registrados'} (cada casilla = 1 hora; D.N./dormido cuenta como media hora de sueño).
+        Medias de {days.length} {days.length === 1 ? 'día registrado' : 'días registrados'} (en franjas de 15 min; D.N./dormido cuenta como la mitad de sueño).
       </Txt>
 
       <SectionTitle

@@ -1,30 +1,34 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { DIARY_SLOTS, filledQuarters, formatDuration, getSlot, hourQuarters, setSlots, QUARTERS, slotLabel } from '@/lib/diary-slots';
 import { DIARY_HOURS, DIARY_STATES, DIARY_STATE_MAP, WEEK_DAYS, WEEK_DAYS_SHORT, hourLabel } from '@/lib/forms';
 import { colors, fonts, radius } from '@/lib/theme';
 import type { DiaryState, SleepDiary } from '@/lib/types';
 
-import { Chips, Icon, Row, Txt } from './ui';
+import { Chips, Row, Txt } from './ui';
 
 export type DiaryEntries = SleepDiary['entries'];
 
-/** Horas de sueño de un día (nocturno = dormido + D.N./dormido medio; diurno = siesta). */
+/**
+ * Horas de sueño de un día, en franjas de 15 min (nocturno = dormido + la mitad
+ * de D.N./dormido; diurno = siesta). Cada bloque seguido de D.N. es un despertar.
+ */
 export function daySummary(entries: DiaryEntries, day: number) {
-  const d = entries[String(day)] ?? {};
+  const d = entries[String(day)];
   let siesta = 0;
   let noche = 0;
   let despertares = 0;
-  for (const h of DIARY_HOURS) {
-    const s = d[String(h)];
-    if (s === 'siesta') siesta += 1;
-    if (s === 'dormido') noche += 1;
-    if (s === 'dn_dormido') {
-      noche += 0.5;
-      despertares += 1;
-    }
-    if (s === 'despertar') despertares += 1;
+  let prev: DiaryState | undefined;
+  for (const { h, m } of DIARY_SLOTS) {
+    const s = getSlot(d, h, m);
+    if (s === 'siesta') siesta += 0.25;
+    if (s === 'dormido') noche += 0.25;
+    if (s === 'dn_dormido') noche += 0.125;
+    if ((s === 'despertar' || s === 'dn_dormido') && prev !== s) despertares += 1;
+    prev = s;
   }
-  return { siesta, noche, total: siesta + noche, despertares, filled: Object.keys(d).length };
+  // filled = horas rellenadas (96 cuartos = 24 h)
+  return { siesta, noche, total: siesta + noche, despertares, filled: filledQuarters(d) / 4 };
 }
 
 export function Legend() {
@@ -40,7 +44,11 @@ export function Legend() {
   );
 }
 
-/** Editor por día: se elige un "pincel" y se tocan las horas. */
+/**
+ * Editor por día: se elige un "pincel" y se tocan las horas.
+ * - Tocar la hora (08:00) marca los 60 minutos.
+ * - Tocar un cuarto (:15, :30…) marca solo esos 15 minutos.
+ */
 export function DiaryDayEditor({
   entries,
   day,
@@ -56,14 +64,13 @@ export function DiaryDayEditor({
   onChange: (next: DiaryEntries) => void;
   disabled?: boolean;
 }) {
-  const d = entries[String(day)] ?? {};
-  const setHour = (h: number) => {
+  const d = entries[String(day)];
+
+  const paint = (slots: { h: number; m: number }[]) => {
     if (disabled) return;
-    const cur = d[String(h)];
-    const nextDay = { ...d };
-    if (cur === brush) delete nextDay[String(h)];
-    else nextDay[String(h)] = brush;
-    onChange({ ...entries, [String(day)]: nextDay });
+    // Si ya estaban todas con el pincel elegido, se borran (tocar de nuevo = borrar)
+    const all = slots.every(({ h, m }) => getSlot(d, h, m) === brush);
+    onChange({ ...entries, [String(day)]: setSlots(d, slots, all ? null : brush) });
   };
 
   return (
@@ -77,42 +84,64 @@ export function DiaryDayEditor({
             onChange={onBrush}
           />
           <Txt variant="label" style={{ marginTop: 12 }}>
-            2. Toca las horas para marcarlas (toca de nuevo para borrar)
+            2. Toca la hora para marcar 60 min, o un cuarto para marcar 15 min
           </Txt>
+          <Txt variant="small">Ej.: si se durmió a las 21:30, marca «Dormido» en :30 y :45 de las 21:00. Toca de nuevo para borrar.</Txt>
         </View>
       ) : null}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {DIARY_HOURS.map((h) => {
-          const s = d[String(h)] as DiaryState | undefined;
-          const info = s ? DIARY_STATE_MAP[s] : null;
-          return (
+      {DIARY_HOURS.map((h) => {
+        const qs = hourQuarters(d, h);
+        const whole = qs[0] && qs.every((q) => q === qs[0]) ? DIARY_STATE_MAP[qs[0]] : null;
+        return (
+          <View key={h} style={{ flexDirection: 'row', alignItems: 'stretch', gap: 4, marginBottom: 4 }}>
             <Pressable
-              key={h}
-              onPress={() => setHour(h)}
+              onPress={() => paint(QUARTERS.map((m) => ({ h, m })))}
               accessibilityRole="button"
-              accessibilityLabel={`${hourLabel(h)} ${info?.label ?? 'sin marcar'}`}
+              accessibilityLabel={`${hourLabel(h)}, marcar la hora entera`}
               style={{
-                width: '31%',
-                minWidth: 92,
-                flexGrow: 1,
-                paddingVertical: 8,
+                width: 64,
+                justifyContent: 'center',
                 paddingHorizontal: 8,
                 borderRadius: radius.sm,
-                backgroundColor: info?.color ?? '#fff',
+                backgroundColor: whole?.color ?? '#fff',
                 borderWidth: 1.5,
-                borderColor: info ? info.text + '33' : colors.border,
+                borderColor: whole ? whole.text + '40' : colors.border,
               }}>
-              <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: info?.text ?? colors.muted }}>{hourLabel(h)}</Text>
-              <Row gap={4} style={{ marginTop: 2 }}>
-                {info ? <Icon name={info.icon} size={13} color={info.text} /> : null}
-                <Text numberOfLines={1} style={{ fontFamily: fonts.medium, fontSize: 11.5, color: info?.text ?? '#C2BEC6', flexShrink: 1 }}>
-                  {info?.label ?? '—'}
-                </Text>
-              </Row>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: whole?.text ?? colors.night }}>{hourLabel(h)}</Text>
+              <Text style={{ fontFamily: fonts.medium, fontSize: 9.5, color: colors.muted }}>60 min</Text>
             </Pressable>
-          );
-        })}
-      </View>
+            {QUARTERS.map((m, i) => {
+              const s = qs[i];
+              const info = s ? DIARY_STATE_MAP[s] : null;
+              return (
+                <Pressable
+                  key={m}
+                  onPress={() => paint([{ h, m }])}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${slotLabel(h, m)} ${info?.label ?? 'sin marcar'}`}
+                  style={{
+                    flex: 1,
+                    minHeight: 40,
+                    borderRadius: radius.sm,
+                    paddingHorizontal: 4,
+                    backgroundColor: info?.color ?? '#fff',
+                    borderWidth: 1,
+                    borderColor: info ? info.text + '33' : colors.border,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 10, color: info?.text ?? '#B8B3BE' }}>:{String(m).padStart(2, '0')}</Text>
+                  {info ? (
+                    <Text numberOfLines={1} style={{ fontFamily: fonts.bold, fontSize: 10.5, color: info.text }}>
+                      {info.short}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -135,21 +164,18 @@ export function DiaryWeekTable({ entries }: { entries: DiaryEntries }) {
           <View key={h} style={{ flexDirection: 'row' }}>
             <Text style={{ width: 54, fontFamily: fonts.semibold, fontSize: 12, color: colors.muted, paddingVertical: 4 }}>{hourLabel(h)}</Text>
             {WEEK_DAYS.map((_, day) => {
-              const s = entries[String(day)]?.[String(h)] as DiaryState | undefined;
-              const info = s ? DIARY_STATE_MAP[s] : null;
+              const qs = hourQuarters(entries[String(day)], h);
+              const same = qs[0] && qs.every((q) => q === qs[0]) ? DIARY_STATE_MAP[qs[0]] : null;
               return (
-                <View
-                  key={day}
-                  style={{
-                    width: cellW - 2,
-                    margin: 1,
-                    height: 24,
-                    borderRadius: 5,
-                    backgroundColor: info?.color ?? '#F6F2EC',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <Text style={{ fontSize: 10, fontFamily: fonts.semibold, color: info?.text ?? '#C8C3CC' }}>{info?.short ?? ''}</Text>
+                <View key={day} style={{ width: cellW - 2, margin: 1, height: 24, borderRadius: 5, overflow: 'hidden', flexDirection: 'row' }}>
+                  {qs.map((q, i) => (
+                    <View key={i} style={{ flex: 1, backgroundColor: q ? DIARY_STATE_MAP[q].color : '#F6F2EC', borderLeftWidth: i ? 0.5 : 0, borderColor: '#fff' }} />
+                  ))}
+                  {same ? (
+                    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 10, fontFamily: fonts.semibold, color: same.text }}>{same.short}</Text>
+                    </View>
+                  ) : null}
                 </View>
               );
             })}
@@ -161,9 +187,12 @@ export function DiaryWeekTable({ entries }: { entries: DiaryEntries }) {
             const s = daySummary(entries, day);
             return (
               <View key={day} style={{ width: cellW, alignItems: 'center' }}>
-                <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.night }}>{s.total ? `${s.total}h` : '—'}</Text>
-                <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: colors.muted }}>
-                  {s.filled ? `☾${s.noche} ☀${s.siesta}` : ''}
+                <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: colors.night }}>{s.total ? formatDuration(s.total).replace(' min', '′') : '—'}</Text>
+                <Text style={{ fontSize: 9.5, fontFamily: fonts.medium, color: colors.muted }}>
+                  {s.filled ? `☾${formatDuration(s.noche).replace(' min', '′')}` : ''}
+                </Text>
+                <Text style={{ fontSize: 9.5, fontFamily: fonts.medium, color: colors.muted }}>
+                  {s.filled ? `☀${formatDuration(s.siesta).replace(' min', '′')}` : ''}
                 </Text>
                 <Text style={{ fontSize: 10, fontFamily: fonts.medium, color: colors.roseDark }}>{s.despertares ? `${s.despertares} D.N.` : ''}</Text>
               </View>
@@ -179,7 +208,7 @@ export function DayTabs({ day, onChange, entries }: { day: number; onChange: (d:
   return (
     <View style={{ flexDirection: 'row', gap: 6 }}>
       {WEEK_DAYS_SHORT.map((d, i) => {
-        const filled = Object.keys(entries[String(i)] ?? {}).length;
+        const filled = filledQuarters(entries[String(i)]) / 4;
         const selected = i === day;
         return (
           <Pressable

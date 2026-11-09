@@ -1,5 +1,6 @@
 import { Platform, ScrollView, Text, View } from 'react-native';
 
+import { DIARY_SLOTS, filledQuarters, formatHM, getSlot, hourQuarters, slotLabel } from '@/lib/diary-slots';
 import { DIARY_HOURS, DIARY_STATES, DIARY_STATE_MAP } from '@/lib/forms';
 import { daytimeSleepPercentile, totalSleepPercentile, type PercentileResult } from '@/lib/percentiles';
 import { colors, fonts, radius } from '@/lib/theme';
@@ -21,32 +22,27 @@ export interface SheetDay {
 
 const STATE_KEYS: DiaryState[] = ['despierto', 'siesta', 'rutina', 'dormido', 'despertar', 'dn_dormido'];
 
-/** Cómputo exacto de un día: horas de cada categoría y totales. */
+/** Cómputo exacto de un día (franjas de 15 min): horas de cada categoría y totales. */
 export function computeDay(hours: Record<string, DiaryState>) {
   const count = Object.fromEntries(STATE_KEYS.map((k) => [k, 0])) as Record<DiaryState, number>;
-  let filled = 0;
-  let nocheDespertares = 0;
+  let despertares = 0;
   let prev: DiaryState | undefined;
-  for (const h of DIARY_HOURS) {
-    const s = hours[String(h)];
-    if (!s) {
-      prev = undefined;
-      continue;
-    }
-    filled++;
-    count[s]++;
+  for (const { h, m } of DIARY_SLOTS) {
+    const s = getSlot(hours, h, m);
+    if (s) count[s] += 0.25;
     // Cada bloque seguido de D.N. cuenta como un despertar
-    if ((s === 'despertar' || s === 'dn_dormido') && prev !== s) nocheDespertares++;
+    if ((s === 'despertar' || s === 'dn_dormido') && prev !== s) despertares++;
     prev = s;
   }
+  const filled = filledQuarters(hours) / 4;
   const nocturno = count.dormido + count.dn_dormido * 0.5;
   const siestas = count.siesta;
-  return { count, filled, nocturno, siestas, total: nocturno + siestas, despertares: nocheDespertares };
+  return { count, filled, nocturno, siestas, total: nocturno + siestas, despertares };
 }
 
-const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ','));
+const fmt = (n: number) => formatHM(n);
 
-const W = { date: 74, num: 44, cat: 40, hour: 24 };
+const W = { date: 74, num: 46, cat: 42, hour: 28 };
 
 const CAT_COLS: { key: DiaryState; label: string }[] = DIARY_STATES.map((s) => ({ key: s.key, label: s.short }));
 
@@ -72,7 +68,7 @@ function PercentileLine({ label, hours, res }: { label: string; hours: number; r
   return (
     <Txt variant="small" style={{ marginTop: 2 }}>
       <Text style={{ fontFamily: fonts.bold, color: colors.text }}>{label}: </Text>
-      {fmt(Math.round(hours * 10) / 10)} h → <Text style={{ fontFamily: fonts.bold, color }}>{res.band}</Text> (mediana para su edad {fmt(res.p50)} h)
+      {fmt(hours)} h → <Text style={{ fontFamily: fonts.bold, color }}>{res.band}</Text> (mediana para su edad {fmt(res.p50)} h)
     </Txt>
   );
 }
@@ -90,13 +86,15 @@ export function DiarySheet({ days, ageMonths, title }: { days: SheetDay[]; ageMo
   const avg = (f: (r: (typeof rows)[number]) => number) => (base.length ? base.reduce((s, r) => s + f(r), 0) / base.length : 0);
   const avgTotal = avg((r) => r.c.total);
   const avgSiestas = avg((r) => r.c.siestas);
+  const SLEEP: DiaryState[] = ['siesta', 'dormido', 'dn_dormido'];
+  // Días que estaba durmiendo a esa hora (al menos media hora de esa hora)
   const hourSleepCount = DIARY_HOURS.map(
-    (h) => rows.filter((r) => ['siesta', 'dormido', 'dn_dormido'].includes(r.hours[String(h)] ?? '')).length,
+    (h) => rows.filter((r) => hourQuarters(r.hours, h).filter((q) => q && SLEEP.includes(q)).length >= 2).length,
   );
   const maxHourCount = Math.max(1, ...hourSleepCount);
 
   const exportCsv = () => {
-    const header = ['Fecha', 'Semana', 'Sueño total', 'Nocturno', 'Siestas', ...CAT_COLS.map((c) => DIARY_STATE_MAP[c.key].label), 'Despertares', ...DIARY_HOURS.map((h) => `${h}:00`), 'Notas'];
+    const header = ['Fecha', 'Semana', 'Sueño total', 'Nocturno', 'Siestas', ...CAT_COLS.map((c) => DIARY_STATE_MAP[c.key].label), 'Despertares', ...DIARY_SLOTS.map(({ h, m }) => slotLabel(h, m)), 'Notas'];
     const lines = rows.map((r) =>
       [
         r.label,
@@ -106,7 +104,10 @@ export function DiarySheet({ days, ageMonths, title }: { days: SheetDay[]; ageMo
         fmt(r.c.siestas),
         ...CAT_COLS.map((c) => r.c.count[c.key]),
         r.c.despertares,
-        ...DIARY_HOURS.map((h) => (r.hours[String(h)] ? DIARY_STATE_MAP[r.hours[String(h)]].short : '')),
+        ...DIARY_SLOTS.map(({ h, m }) => {
+          const st = getSlot(r.hours, h, m);
+          return st ? DIARY_STATE_MAP[st].short : '';
+        }),
         (r.note ?? '').replace(/[\r\n;]+/g, ' '),
       ].join(';'),
     );
@@ -157,27 +158,19 @@ export function DiarySheet({ days, ageMonths, title }: { days: SheetDay[]; ageMo
                 <NumCell w={W.num} value={r.c.filled ? fmt(r.c.nocturno) : ''} bg="#F7F4FB" />
                 <NumCell w={W.num} value={r.c.filled ? fmt(r.c.siestas) : ''} bg="#F3FAF6" />
                 {CAT_COLS.map((c) => (
-                  <NumCell key={c.key} w={W.cat} value={r.c.filled && r.c.count[c.key] ? String(r.c.count[c.key]) : ''} color={DIARY_STATE_MAP[c.key].text} />
+                  <NumCell key={c.key} w={W.cat} value={r.c.filled && r.c.count[c.key] ? fmt(r.c.count[c.key]) : ''} color={DIARY_STATE_MAP[c.key].text} />
                 ))}
                 <View style={{ width: 8 }} />
-                {DIARY_HOURS.map((h) => {
-                  const s = r.hours[String(h)];
-                  const info = s ? DIARY_STATE_MAP[s] : null;
-                  return (
-                    <View
-                      key={h}
-                      style={{
-                        width: W.hour - 2,
-                        height: 22,
-                        margin: 1,
-                        borderRadius: 4,
-                        backgroundColor: info?.color ?? '#F6F2EC',
-                        borderWidth: info ? 1 : 0,
-                        borderColor: info ? info.text + '40' : undefined,
-                      }}
-                    />
-                  );
-                })}
+                {DIARY_HOURS.map((h) => (
+                  <View key={h} style={{ width: W.hour - 2, height: 22, margin: 1, borderRadius: 4, overflow: 'hidden', flexDirection: 'row' }}>
+                    {hourQuarters(r.hours, h).map((q, i) => (
+                      <View
+                        key={i}
+                        style={{ flex: 1, backgroundColor: q ? DIARY_STATE_MAP[q].color : '#F6F2EC', borderLeftWidth: i ? 0.5 : 0, borderColor: '#fff' }}
+                      />
+                    ))}
+                  </View>
+                ))}
               </View>
             );
           })}
@@ -187,11 +180,11 @@ export function DiarySheet({ days, ageMonths, title }: { days: SheetDay[]; ageMo
             <View style={{ width: W.date, height: 26, justifyContent: 'center' }}>
               <Text style={{ fontFamily: fonts.bold, fontSize: 11.5, color: colors.night }}>MEDIA</Text>
             </View>
-            <NumCell w={W.num} value={base.length ? fmt(Math.round(avgTotal * 10) / 10) : '—'} bold bg={colors.nightSoft} />
-            <NumCell w={W.num} value={base.length ? fmt(Math.round(avg((r) => r.c.nocturno) * 10) / 10) : '—'} bold bg={colors.lavender} />
-            <NumCell w={W.num} value={base.length ? fmt(Math.round(avgSiestas * 10) / 10) : '—'} bold bg={colors.mint} />
+            <NumCell w={W.num} value={base.length ? fmt(avgTotal) : '—'} bold bg={colors.nightSoft} />
+            <NumCell w={W.num} value={base.length ? fmt(avg((r) => r.c.nocturno)) : '—'} bold bg={colors.lavender} />
+            <NumCell w={W.num} value={base.length ? fmt(avgSiestas) : '—'} bold bg={colors.mint} />
             {CAT_COLS.map((c) => (
-              <NumCell key={c.key} w={W.cat} value={base.length ? fmt(Math.round(avg((r) => r.c.count[c.key]) * 10) / 10) : '—'} bold color={DIARY_STATE_MAP[c.key].text} />
+              <NumCell key={c.key} w={W.cat} value={base.length ? fmt(avg((r) => r.c.count[c.key])) : '—'} bold color={DIARY_STATE_MAP[c.key].text} />
             ))}
             <View style={{ width: 8 }} />
             {hourSleepCount.map((n, i) => (
@@ -215,10 +208,10 @@ export function DiarySheet({ days, ageMonths, title }: { days: SheetDay[]; ageMo
 
       <View style={{ marginTop: 10 }}>
         <Txt variant="small">
-          Cada casilla = 1 hora (de 8:00 a 7:00 del día siguiente). Columnas de categorías = horas exactas de cada estado. Nocturno = Dormido + ½ de
+          Cada hora (de 8:00 a 7:00 del día siguiente) se divide en 4 franjas de 15 min. Tiempos en horas:minutos; columnas de categorías = tiempo exacto de cada estado. Nocturno = Dormido + ½ de
           D.N./dormido. Media calculada con {base.length} {complete.length ? 'días completos' : 'días registrados'}
           {complete.length && filled.length > complete.length ? ` (se excluyen ${filled.length - complete.length} días incompletos, marcados con *)` : ''}. Fila
-          inferior: nº de días que estaba durmiendo a esa hora.
+          inferior: nº de días que estaba durmiendo a esa hora (al menos 30 min).
         </Txt>
         {base.length ? (
           <View style={{ marginTop: 8, padding: 10, borderRadius: radius.md, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border }}>

@@ -5,7 +5,8 @@ import { View } from 'react-native';
 import { DayTabs, DiaryDayEditor, DiaryWeekTable, daySummary, Legend, type DiaryEntries } from '@/components/diary';
 import { Button, Card, Chips, Empty, HeroHeader, Input, Row, Screen, SectionTitle, Txt, confirmAction, notify, Loading } from '@/components/ui';
 import { useFamily } from '@/context/family';
-import { DIARY_HOURS, DIARY_INSTRUCTIONS, SLEEP_SIGNALS, WEEK_DAYS } from '@/lib/forms';
+import { DIARY_SLOTS, formatDuration, getSlot, setSlots } from '@/lib/diary-slots';
+import { DIARY_INSTRUCTIONS, SLEEP_SIGNALS, WEEK_DAYS } from '@/lib/forms';
 import { addDays, formatShortDate, parseISODate, startOfWeek, toISODate, weekStartDate } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
@@ -56,9 +57,9 @@ export default function Diario() {
   };
 
   const fillEmpty = () => {
-    const d = { ...(entries[String(day)] ?? {}) };
-    for (const h of DIARY_HOURS) if (!d[String(h)]) d[String(h)] = brush;
-    change({ ...entries, [String(day)]: d });
+    const d = entries[String(day)];
+    const empty = DIARY_SLOTS.filter(({ h, m }) => !getSlot(d, h, m));
+    change({ ...entries, [String(day)]: setSlots(d, empty, brush) });
   };
 
   const save = async (submit: boolean) => {
@@ -137,7 +138,7 @@ export default function Diario() {
                 {WEEK_DAYS[day]} {dayDate(day).getDate()}
               </Txt>
               <Txt variant="small">
-                ☾ {sum.noche} h · ☀ {sum.siesta} h · {sum.despertares} D.N.
+                ☾ {formatDuration(sum.noche)} · ☀ {formatDuration(sum.siesta)} · {sum.despertares} D.N.
               </Txt>
             </Row>
             <DiaryDayEditor entries={entries} day={day} brush={brush} onBrush={setBrush} onChange={change} disabled={!editable} />
