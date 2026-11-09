@@ -83,17 +83,27 @@ Los valores están en Supabase → **Project Settings → API**.
 
 ### 3. Probar en local
 
-#### Opción fácil en Windows: `iniciar-desayunoconchupetes.bat`
-1. Descarga solo el archivo [`iniciar-desayunoconchupetes.bat`](iniciar-desayunoconchupetes.bat) (botón *Download raw file*) y guárdalo en una carpeta, por ejemplo `Documentos\DesayunoConChupetes`.
-2. Haz doble clic. El script:
-   - comprueba que tienes **Node.js 20 o superior** (si no, ofrece instalarlo con `winget`),
-   - descarga el proyecto de GitHub (con Git o, si no está instalado, como ZIP) en la subcarpeta `desayunoconchupetes`, o lo **actualiza** si ya existe,
-   - instala las dependencias (solo la primera vez),
-   - pide la **URL y la clave anon de Supabase** la primera vez y las guarda en `.env`,
-   - muestra un menú: **1** abrir en el navegador (`http://localhost:8081`), **2** probar en el móvil con Expo Go (QR, misma WiFi), **3** generar la web para publicar (`dist/`), **4** cambiar los datos de Supabase.
-3. Las siguientes veces arranca directamente; si no hay internet usa la versión ya descargada.
+#### Alojar la app gratis en un PC con Windows: `iniciar-desayunoconchupetes.bat`
+El PC hace de servidor de la web y la publica en internet con un **túnel gratuito de Cloudflare** (sin cuenta, sin abrir puertos del router). Los datos siguen en Supabase (plan gratuito).
 
-> La app guarda los datos en Supabase, así que el PC necesita internet para iniciar sesión y sincronizar.
+1. Descarga el proyecto: `git clone https://github.com/jarconett/desayunoconchupetes.git` (recomendado, así se actualiza solo) o *Code → Download ZIP* y descomprímelo.
+2. En Supabase → **Authentication → URL Configuration** añade como *Redirect URL* `https://*.trycloudflare.com/**` (para los correos de recuperar contraseña).
+3. Doble clic en **`iniciar-desayunoconchupetes.bat`**. El script:
+   - comprueba **Node.js 20+** (si falta, ofrece instalarlo con `winget`),
+   - **actualiza** el proyecto desde GitHub (`git pull`) si se descargó con git,
+   - instala las dependencias (solo la primera vez o si cambian),
+   - pide la **URL y la clave anon de Supabase** la primera vez y las guarda en `.env`,
+   - **genera la web** (`dist/`) solo cuando hay cambios,
+   - arranca el servidor web (`servidor/servidor-web.js`, sin dependencias) en `http://localhost:8080` y en la red local,
+   - descarga `cloudflared` (solo la primera vez) y abre el túnel: muestra el **enlace público** `https://xxxx.trycloudflare.com`, lo copia al portapapeles y lo guarda en `ENLACE-PUBLICO.txt`,
+   - si se corta internet, reabre el túnel solo.
+4. Deja la ventana abierta mientras quieras que la app esté disponible. **Q** la detiene.
+
+> ⚠️ El enlace gratuito de Cloudflare **cambia cada vez que se reinicia** el servidor y la app solo está disponible mientras el PC esté encendido. Para una dirección fija (p. ej. `app.desayunoconchupetes.com`) hace falta un dominio propio y un *túnel con nombre* de Cloudflare (también gratis), o publicar `dist/` en Netlify/Cloudflare Pages.
+>
+> Para que arranque solo al encender el PC: `Win + R` → `shell:startup` y crea ahí un acceso directo al `.bat`.
+>
+> Los registros están en `logs/` (servidor y túnel).
 
 #### Manual
 ```bash

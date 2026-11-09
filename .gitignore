@@ -44,3 +44,8 @@ example
 
 .env
 
+
+# servidor local (Windows)
+herramientas/
+logs/
+ENLACE-PUBLICO.txt
