@@ -65,7 +65,7 @@ export const NOISE_SOUNDS: NoiseSound[] = [
     icon: 'waves',
     color: '#DDF1E6',
     source: require('../../assets/sounds/olas.m4a'),
-    credit: 'Sonido de olas sintetizado para Desayuno con Chupetes.',
+    credit: '«Ocean Waves on a Tropical Beach.ogg», Wikimedia Commons, CC0 (fragmento en bucle y volumen adaptados).',
   },
   {
     key: 'rio',
