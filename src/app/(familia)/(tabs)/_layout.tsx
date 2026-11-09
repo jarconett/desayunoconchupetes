@@ -1,12 +1,13 @@
 import { Tabs } from 'expo-router';
 
-import { tabIcon, tabScreenOptions } from '@/components/tabs';
+import { tabIcon, useTabScreenOptions } from '@/components/tabs';
 import { useFamily } from '@/context/family';
 
 export default function FamilyTabs() {
   const { tasks } = useFamily();
+  const screenOptions = useTabScreenOptions();
   return (
-    <Tabs screenOptions={tabScreenOptions}>
+    <Tabs screenOptions={screenOptions}>
       <Tabs.Screen
         name="inicio"
         options={{

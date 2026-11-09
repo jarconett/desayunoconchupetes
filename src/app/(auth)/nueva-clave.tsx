@@ -18,7 +18,11 @@ export default function NuevaClave() {
     }
     const { error: err } = await supabase.auth.updateUser({ password });
     if (err) {
-      setError(err.message);
+      setError(
+        /session/i.test(err.message)
+          ? 'El enlace ha caducado o no es válido. Vuelve a "¿Has olvidado tu contraseña?" y usa el código del correo.'
+          : err.message,
+      );
       return;
     }
     notify('Contraseña actualizada');

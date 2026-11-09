@@ -74,6 +74,19 @@ supabase/migrations/   esquema de base de datos, permisos y avisos automáticos
 
 > 🔐 La cuenta que se registre con **desayunoconchupetes@gmail.com** se crea automáticamente como **administradora**. Desde *Usuarios* puede dar acceso de administradora a otras personas.
 
+### 1b. Correos (recuperar contraseña y confirmar cuenta)
+El correo integrado de Supabase **solo envía a los miembros del equipo del proyecto** y muy pocos por hora, así que para las familias hay que usar un SMTP propio. Con Gmail es gratis:
+1. En la cuenta de Google de desayunoconchupetes@gmail.com activa la **verificación en 2 pasos** y crea una **contraseña de aplicación** en <https://myaccount.google.com/apppasswords>.
+2. Supabase → **Authentication → Emails → SMTP Settings** → *Enable custom SMTP*: host `smtp.gmail.com`, puerto `465`, usuario `desayunoconchupetes@gmail.com`, contraseña = la contraseña de aplicación (16 letras, sin espacios), remitente `desayunoconchupetes@gmail.com`, nombre `Desayuno con Chupetes`.
+3. Supabase → **Authentication → Emails → Templates → Reset Password**: la app pide un **código**, así que la plantilla debe incluir `{{ .Token }}`. Asunto: `Tu código para crear una nueva contraseña`. Cuerpo:
+   ```html
+   <h2>Desayuno con Chupetes</h2>
+   <p>Tu código para crear una nueva contraseña es:</p>
+   <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
+   <p>Escríbelo en la app junto con tu nueva contraseña. Caduca en 1 hora.</p>
+   <p>Si no lo has pedido tú, ignora este correo.</p>
+   ```
+
 ### 2. Configurar la app
 ```bash
 npm install

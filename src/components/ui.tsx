@@ -86,10 +86,12 @@ export function Screen({
   header?: ReactNode;
   padded?: boolean;
 }) {
+  // Hueco de la barra de navegación del sistema (Android con botones, iPhone sin botón)
+  const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: 48 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
         refreshControl={
           onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.primary} /> : undefined
