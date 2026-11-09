@@ -119,10 +119,17 @@ Ok 'Dependencias listas'
 Titulo 'Configuracion de Supabase'
 $envPath = Join-Path $Raiz '.env'
 $envTexto = if (Test-Path $envPath) { Get-Content $envPath -Raw } else { '' }
+if ($envTexto -match 'EXPO_PUBLIC_SUPABASE_URL=https://[^/\s]+/') {
+    # La URL debe ser solo https://xxxx.supabase.co (sin /rest/v1/ ni barra final)
+    $envTexto = $envTexto -replace 'EXPO_PUBLIC_SUPABASE_URL=(https://[^/\s]+)[^\r\n]*', 'EXPO_PUBLIC_SUPABASE_URL=$1'
+    [IO.File]::WriteAllText($envPath, $envTexto)
+    Write-Host '  [OK] Corregida la URL de Supabase en .env' -ForegroundColor Green
+}
 if (-not $envTexto -or $envTexto -match 'TU-PROYECTO' -or $envTexto -notmatch 'EXPO_PUBLIC_SUPABASE_URL=https://') {
     Write-Host '  Los datos estan en supabase.com > tu proyecto > Project Settings > API' -ForegroundColor White
     $sbUrl = (Read-Host '  Project URL (https://xxxx.supabase.co)').Trim()
     $sbKey = (Read-Host '  Clave anon / publishable').Trim()
+    if ($sbUrl -match '^(https://[^/\s]+)') { $sbUrl = $matches[1] }   # quita /rest/v1/ y la barra final
     if ($sbUrl -notmatch '^https://') { Fallo 'La URL debe empezar por https://' }
     if (-not $sbKey) { Fallo 'Falta la clave anon.' }
     $envTexto = "EXPO_PUBLIC_SUPABASE_URL=$sbUrl`r`nEXPO_PUBLIC_SUPABASE_ANON_KEY=$sbKey`r`n"

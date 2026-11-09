@@ -3,8 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+// Solo el dominio del proyecto: si se copió el "RESTful endpoint" (…/rest/v1/)
+// o lleva barra final, Supabase responde "Invalid path specified in request URL".
+const limpiar = (v?: string) => (v ?? '').trim().replace(/^["']|["']$/g, '');
+const url = limpiar(process.env.EXPO_PUBLIC_SUPABASE_URL).replace(/^(https?:\/\/[^/?#\s]+).*$/, '$1');
+const anonKey = limpiar(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 
 export const isConfigured = Boolean(url && anonKey);
 
