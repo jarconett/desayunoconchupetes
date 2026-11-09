@@ -33,7 +33,7 @@ export const NOISE_SOUNDS: NoiseSound[] = [
     icon: 'weather-pouring',
     color: '#DDEFF0',
     source: require('../../assets/sounds/lluvia.m4a'),
-    credit: 'Sonido de lluvia sintetizado para Desayuno con Chupetes.',
+    credit: '«Rain against the window.ogg», Wikimedia Commons, dominio público (bucle y volumen adaptados).',
   },
   {
     key: 'secador',
@@ -49,7 +49,7 @@ export const NOISE_SOUNDS: NoiseSound[] = [
     icon: 'fan',
     color: '#E8E1F5',
     source: require('../../assets/sounds/ventilador.m4a'),
-    credit: 'Sonido de ventilador sintetizado para Desayuno con Chupetes.',
+    credit: '«Ventilador.ogg» de Armartinell, Wikimedia Commons, licencia CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Adaptado: bucle y volumen.',
   },
   {
     key: 'lavadora',
@@ -73,7 +73,7 @@ export const NOISE_SOUNDS: NoiseSound[] = [
     icon: 'waves-arrow-right',
     color: '#F8DDE4',
     source: require('../../assets/sounds/rio.m4a'),
-    credit: 'Sonido de río sintetizado para Desayuno con Chupetes.',
+    credit: '«Shallow small river with stony riverbed.ogg», Wikimedia Commons, dominio público (bucle y volumen adaptados).',
   },
 ];
 
