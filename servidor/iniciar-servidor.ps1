@@ -47,11 +47,21 @@ function Leer-Log($ruta) {
     } catch { return '' }
 }
 
+function Puerto-Ocupado($p) {
+    # True si algo escucha en 127.0.0.1:$p (sin pasar por el proxy de Windows)
+    $c = New-Object Net.Sockets.TcpClient
+    try {
+        $ar = $c.BeginConnect('127.0.0.1', $p, $null, $null)
+        if ($ar.AsyncWaitHandle.WaitOne(800) -and $c.Connected) { return $true }
+        return $false
+    } catch { return $false } finally { $c.Close() }
+}
+
 function Detener-Restos {
     # Cierra servidores o tuneles que se quedaran abiertos de una ejecucion anterior
     try {
         Get-CimInstance Win32_Process -Filter "Name='node.exe' OR Name='cloudflared.exe'" |
-            Where-Object { $_.CommandLine -and ($_.CommandLine -like '*servidor-web.js*' -or $_.CommandLine -like "*localhost:$Puerto*") } |
+            Where-Object { $_.CommandLine -and ($_.CommandLine -like '*servidor-web.js*' -or $_.ExecutablePath -eq $Cloudflared) } |
             ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
     } catch { }
 }
@@ -168,7 +178,7 @@ $procTunel = $null
 function Iniciar-Tunel {
     $logTunel = Join-Path $Logs 'tunel.log'
     Remove-Item $logTunel -ErrorAction SilentlyContinue
-    $p = Start-Process -FilePath $Cloudflared -ArgumentList @('tunnel', '--no-autoupdate', '--url', "http://localhost:$Puerto") `
+    $p = Start-Process -FilePath $Cloudflared -ArgumentList @('tunnel', '--no-autoupdate', '--url', "http://127.0.0.1:$Puerto") `
         -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $Logs 'tunel-salida.log') -RedirectStandardError $logTunel
     $url = $null
     for ($i = 0; $i -lt 60 -and -not $url; $i++) {
@@ -184,18 +194,32 @@ function Iniciar-Tunel {
 
 try {
     Titulo 'Arrancando el servidor web'
-    $procServidor = Start-Process -FilePath 'node' -ArgumentList @('servidor\servidor-web.js', "$Puerto") `
-        -WorkingDirectory $Raiz -NoNewWindow -PassThru `
-        -RedirectStandardOutput (Join-Path $Logs 'servidor.log') -RedirectStandardError (Join-Path $Logs 'servidor-error.log')
+    # Si el puerto 8080 esta ocupado por otro programa, se usa el siguiente libre
+    while (Puerto-Ocupado $Puerto) {
+        Aviso "El puerto $Puerto esta ocupado por otro programa: se prueba el $($Puerto + 1)"
+        $Puerto++
+        if ($Puerto -gt 8100) { Fallo 'No hay puertos libres entre 8080 y 8100.' }
+    }
+    $logSrv = Join-Path $Logs 'servidor.log'
+    $logSrvErr = Join-Path $Logs 'servidor-error.log'
+    $nodeExe = (Get-Command node).Source
+    $procServidor = Start-Process -FilePath $nodeExe -ArgumentList @("`"$(Join-Path $Raiz 'servidor\servidor-web.js')`"", "$Puerto") `
+        -WorkingDirectory $Raiz -NoNewWindow -PassThru -RedirectStandardOutput $logSrv -RedirectStandardError $logSrvErr
     $listo = $false
-    for ($i = 0; $i -lt 20 -and -not $listo; $i++) {
+    for ($i = 0; $i -lt 60 -and -not $listo; $i++) {
         Start-Sleep -Milliseconds 500
         if ($procServidor.HasExited) { break }
-        try { Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:$Puerto/" -TimeoutSec 2 -ErrorAction Stop | Out-Null; $listo = $true } catch { }
+        $listo = Puerto-Ocupado $Puerto
     }
     if (-not $listo) {
-        Get-Content (Join-Path $Logs 'servidor-error.log') -ErrorAction SilentlyContinue | Write-Host
-        Fallo "El servidor no ha arrancado (revisa logs\servidor-error.log)"
+        Write-Host ''
+        if ($procServidor.HasExited) { Aviso "El servidor se cerro (codigo $($procServidor.ExitCode))." }
+        else { Aviso 'El servidor no responde despues de 30 segundos.' }
+        Write-Host '  ---- logs\servidor.log ----' -ForegroundColor DarkGray
+        Write-Host (Leer-Log $logSrv)
+        Write-Host '  ---- logs\servidor-error.log ----' -ForegroundColor DarkGray
+        Write-Host (Leer-Log $logSrvErr)
+        Fallo 'El servidor no ha arrancado. Copia el texto de arriba y envialo para revisarlo.'
     }
     Ok "Servidor en http://localhost:$Puerto"
     $ipsLocales = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
