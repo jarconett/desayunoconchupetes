@@ -66,7 +66,10 @@ export default function Plan() {
             <WeekIndicator child={child} />
           </Card>
 
-          <Button title="Temporizador de siesta" icon="timer-outline" variant="secondary" style={{ marginTop: 12 }} onPress={() => router.push('/temporizador')} />
+          <Row gap={8} style={{ marginTop: 12, flexWrap: 'wrap' }}>
+            <Button title="Temporizador de siesta" icon="timer-outline" variant="secondary" small style={{ flexGrow: 1 }} onPress={() => router.push('/temporizador')} />
+            <Button title="Ruido blanco" icon="waves" variant="secondary" small style={{ flexGrow: 1 }} onPress={() => router.push('/ruido-blanco')} />
+          </Row>
 
           <SectionTitle icon="bell-ring-outline">Recordatorios</SectionTitle>
           <ReminderSummary reminders={plan.reminders} />

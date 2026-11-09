@@ -69,6 +69,17 @@ export default function Inicio() {
           </Row>
         </Card>
       ) : null}
+      {fam.children.length ? (
+        <Card onPress={() => router.push('/ruido-blanco')} tint={colors.nightSoft} style={{ marginTop: 10 }}>
+          <Row>
+            <IconBubble name="waves" bg="#fff" color={colors.night} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="h3">Ruido blanco</Txt>
+              <Txt variant="small">Lluvia, olas, secador, ventilador… con apagado automático 🌙</Txt>
+            </View>
+          </Row>
+        </Card>
+      ) : null}
 
       <SectionTitle icon="baby-face-outline" action={<Button small variant="ghost" icon="plus" title="Añadir" onPress={() => router.push('/peque/nuevo')} />}>
         {fam.children.length > 1 ? 'Mis peques' : 'Mi peque'}

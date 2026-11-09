@@ -132,3 +132,16 @@ export function greeting(d: Date = new Date()) {
   if (h < 21) return 'Buenas tardes';
   return 'Buenas noches';
 }
+
+/**
+ * Hora a la que terminará algo que empieza ahora y dura `minutes` minutos.
+ * Si cae en otro día devuelve también los días de diferencia (p. ej. "07:10 (+1d)").
+ */
+export function endTimePreview(minutes: number, from: Date = new Date()) {
+  const end = new Date(from.getTime() + minutes * 60000);
+  const time = `${pad(end.getHours())}:${pad(end.getMinutes())}`;
+  const dayA = new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime();
+  const dayB = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+  const days = Math.round((dayB - dayA) / 86400000);
+  return { end, time, days, label: days > 0 ? `${time} (+${days}d)` : time };
+}

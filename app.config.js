@@ -16,6 +16,11 @@ module.exports = ({ config }) => {
     ];
   });
 
+  // Audio (ruido blanco): reproducción en segundo plano, sin micrófono
+  if (!config.plugins.some((p) => (Array.isArray(p) ? p[0] : p) === 'expo-audio')) {
+    config.plugins.push(['expo-audio', { microphonePermission: false, recordAudioAndroid: false, enableBackgroundPlayback: true }]);
+  }
+
   // Firebase (notificaciones push en Android): si existe google-services.json se usa.
   // Pasos para obtenerlo: README > "Notificaciones push en Android (Firebase)".
   if (fs.existsSync(path.join(__dirname, 'google-services.json'))) {

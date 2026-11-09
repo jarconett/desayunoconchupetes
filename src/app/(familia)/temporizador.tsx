@@ -4,6 +4,7 @@ import { Platform, Text, View } from 'react-native';
 import { Button, Card, Chips, HeroHeader, IconBubble, Row, Screen, Txt, notify } from '@/components/ui';
 import { WheelPicker } from '@/components/wheel-picker';
 import { useFamily } from '@/context/family';
+import { endTimePreview } from '@/lib/dates';
 import { cancelNapTimer, getNapTimer, startNapTimer, type NapTimer } from '@/lib/notifications';
 import { colors, fonts } from '@/lib/theme';
 
@@ -90,7 +91,7 @@ export default function Temporizador() {
           <Txt variant="small" center>
             {finished
               ? `Terminó a las ${hourOf(timer.endsAt)} (duración ${durationLabel(timer.minutes)}).`
-              : `Duración ${durationLabel(timer.minutes)} · te avisaremos a las ${hourOf(timer.endsAt)}`}
+              : `Duración ${durationLabel(timer.minutes)} · te avisaremos a las ${endTimePreview((timer.endsAt - Date.now()) / 60000).label}`}
           </Txt>
           {!finished && Platform.OS !== 'web' ? (
             <Txt variant="small" center style={{ marginTop: 4 }}>
@@ -119,9 +120,19 @@ export default function Temporizador() {
               Desliza la rueda hacia arriba o abajo
             </Txt>
             <WheelPicker values={MINUTES} value={minutes} onChange={setMinutes} format={(v) => `${v} min`} />
-            <Txt variant="h3" color={colors.night} style={{ marginTop: 10 }}>
-              {durationLabel(minutes)} · terminará a las {hourOf(Date.now() + minutes * 60000)}
-            </Txt>
+            <View style={{ marginTop: 12, padding: 12, borderRadius: 16, backgroundColor: colors.nightSoft, alignItems: 'center', alignSelf: 'stretch' }}>
+              <Txt variant="small" color={colors.night}>
+                Siesta de {durationLabel(minutes)}: se despertará a las
+              </Txt>
+              <Row gap={6}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 30, color: colors.night }}>{endTimePreview(minutes).time}</Text>
+                {endTimePreview(minutes).days > 0 ? (
+                  <View style={{ backgroundColor: colors.lavenderDark, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#fff' }}>+{endTimePreview(minutes).days}d</Text>
+                  </View>
+                ) : null}
+              </Row>
+            </View>
             <Row gap={6} style={{ flexWrap: 'wrap', justifyContent: 'center', marginTop: 12 }}>
               {QUICK.map((q) => (
                 <Button key={q} small variant={q === minutes ? 'primary' : 'soft'} title={durationLabel(q)} onPress={() => setMinutes(q)} />
