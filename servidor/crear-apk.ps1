@@ -56,7 +56,9 @@ if (-not $envTexto -or $envTexto -match 'TU-PROYECTO' -or $envTexto -notmatch 'E
     [IO.File]::WriteAllText($envPath, "EXPO_PUBLIC_SUPABASE_URL=$sbUrl`r`nEXPO_PUBLIC_SUPABASE_ANON_KEY=$sbKey`r`n")
 }
 Ok 'Datos de Supabase en .env (se incluyen en la APK)'
-if (-not (Test-Path (Join-Path $Raiz 'node_modules\expo\package.json'))) {
+$marcaDeps = Join-Path $Raiz 'node_modules\.package-lock.json'
+$lock = Join-Path $Raiz 'package-lock.json'
+if (-not (Test-Path $marcaDeps) -or ((Get-Item $lock).LastWriteTime -gt (Get-Item $marcaDeps).LastWriteTime)) {
     Info 'Instalando dependencias...'
     npm install --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) { Fallo 'No se pudieron instalar las dependencias.' }
@@ -95,6 +97,8 @@ if (-not (ProjectId)) {
 Ok "Proyecto registrado en Expo ($(ProjectId))"
 
 # ---------- Compilar ----------
+$version = (git -C $Raiz log -1 --format='%h del %cd' --date=format:'%d/%m/%Y %H:%M' 2>$null)
+if ($version) { Info "Se compila la version $version" }
 Titulo 'Compilando la APK en Expo (10-30 minutos, depende de la cola)'
 Info 'La primera vez pregunta si generar un "Android Keystore": responde Y.'
 Info 'Puedes seguir el progreso en el enlace que aparece (expo.dev).'

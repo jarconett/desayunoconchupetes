@@ -94,15 +94,8 @@ if ([int]($versionNode.TrimStart('v').Split('.')[0]) -lt 20) {
 Ok "Node.js $versionNode"
 
 # ---------- 2. Actualizar desde GitHub ----------
-Titulo 'Buscando actualizaciones'
+# (La actualizacion desde GitHub la hace servidor\actualizar.ps1, que lanza el .bat antes)
 $hayGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
-if ($hayGit -and (Test-Path (Join-Path $Raiz '.git'))) {
-    git -C $Raiz pull --ff-only 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Ok 'Proyecto al dia' }
-    else { Aviso 'No se pudo actualizar (sin internet o con cambios locales). Se usa la version actual.' }
-} else {
-    Info 'El proyecto no se descargo con git: para actualizar, vuelve a descargarlo de GitHub.'
-}
 
 # ---------- 3. Dependencias ----------
 Titulo 'Dependencias'
