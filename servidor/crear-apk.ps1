@@ -66,9 +66,14 @@ Ok 'Dependencias listas'
 # ---------- Cuenta de Expo ----------
 Titulo 'Cuenta de Expo'
 function Usuario-Expo {
-    $u = (EAS whoami 2>$null | Select-Object -First 1)
-    if ($LASTEXITCODE -ne 0 -or -not $u -or $u -match 'command line tool|Not logged in') { return $null }
-    return "$u".Trim()
+    # Se lee toda la salida (cortarla con Select-Object -First 1 detiene el
+    # proceso y da un codigo de error aunque la sesion este iniciada)
+    $salida = @(EAS whoami 2>$null)
+    $codigo = $LASTEXITCODE
+    $texto = $salida -join "`n"
+    if ($codigo -ne 0 -or $texto -match 'command line tool|Not logged in|not logged') { return $null }
+    $u = $salida | ForEach-Object { "$_".Trim() } | Where-Object { $_ -match '^[A-Za-z0-9._-]+$' } | Select-Object -First 1
+    if ($u) { return $u } else { return 'cuenta de Expo' }
 }
 $usuario = Usuario-Expo
 if (-not $usuario) {
