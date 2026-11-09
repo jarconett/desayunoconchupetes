@@ -225,3 +225,70 @@ export async function sendTestNotifications(): Promise<{ local: boolean; push: '
   if (error) return { local, push: 'error', error: error.message };
   return { local, push: data === 'push_enviado' ? 'push_enviado' : 'sin_token' };
 }
+
+// ---------------------------------------------------------------------
+// Temporizador de siestas
+// ---------------------------------------------------------------------
+const NAP_KEY = 'temporizador_siesta';
+
+export interface NapTimer {
+  /** id de la notificación programada (solo móvil) */
+  notificationId: string | null;
+  childName: string;
+  minutes: number;
+  startedAt: number;
+  endsAt: number;
+}
+
+export async function getNapTimer(): Promise<NapTimer | null> {
+  try {
+    const raw = await AsyncStorage.getItem(NAP_KEY);
+    if (!raw) return null;
+    const t = JSON.parse(raw) as NapTimer;
+    // Se conserva un rato tras terminar para mostrar "¡Fin de la siesta!"
+    if (Date.now() > t.endsAt + 30 * 60 * 1000) {
+      await AsyncStorage.removeItem(NAP_KEY);
+      return null;
+    }
+    return t;
+  } catch {
+    return null;
+  }
+}
+
+/** Inicia el temporizador y programa la notificación de fin de siesta. */
+export async function startNapTimer(minutes: number, childName: string): Promise<{ timer: NapTimer; notified: boolean }> {
+  await cancelNapTimer();
+  const startedAt = Date.now();
+  let notificationId: string | null = null;
+  if (isNative && (await ensurePermission())) {
+    notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `⏰ ${childName ? `Fin de la siesta de ${childName}` : 'Fin de la siesta'}`,
+        body: `Han pasado ${minutes >= 60 ? `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ''}` : `${minutes} min`}. ¡Hora de despertar! ☀️`,
+        sound: 'default',
+        data: { link: '/temporizador' },
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: minutes * 60, channelId: 'recordatorios' },
+    });
+  }
+  const timer: NapTimer = { notificationId, childName, minutes, startedAt, endsAt: startedAt + minutes * 60 * 1000 };
+  try {
+    await AsyncStorage.setItem(NAP_KEY, JSON.stringify(timer));
+  } catch {
+    // sin almacenamiento: el temporizador funciona mientras la pantalla esté abierta
+  }
+  return { timer, notified: !!notificationId };
+}
+
+export async function cancelNapTimer() {
+  const t = await getNapTimer();
+  if (t?.notificationId && isNative) {
+    await Notifications.cancelScheduledNotificationAsync(t.notificationId).catch(() => {});
+  }
+  try {
+    await AsyncStorage.removeItem(NAP_KEY);
+  } catch {
+    // nada
+  }
+}

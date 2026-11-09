@@ -58,6 +58,18 @@ export default function Inicio() {
         </Card>
       ) : null}
 
+      {fam.children.length ? (
+        <Card onPress={() => router.push('/temporizador')} tint={colors.lavender} style={{ marginTop: 12 }}>
+          <Row>
+            <IconBubble name="timer-outline" bg="#fff" color={colors.lavenderDark} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="h3">Temporizador de siesta</Txt>
+              <Txt variant="small">Elige cuánto dura la siesta y te avisamos ⏰</Txt>
+            </View>
+          </Row>
+        </Card>
+      ) : null}
+
       <SectionTitle icon="baby-face-outline" action={<Button small variant="ghost" icon="plus" title="Añadir" onPress={() => router.push('/peque/nuevo')} />}>
         {fam.children.length > 1 ? 'Mis peques' : 'Mi peque'}
       </SectionTitle>

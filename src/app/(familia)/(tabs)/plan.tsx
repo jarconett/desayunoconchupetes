@@ -1,9 +1,10 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { PlanSections, ReminderSummary, Timeline } from '@/components/plan';
 import { WeekIndicator } from '@/components/progress';
-import { Card, Chips, Empty, HeroHeader, Row, Screen, SectionTitle, Toggle, Txt } from '@/components/ui';
+import { Button, Card, Chips, Empty, HeroHeader, Row, Screen, SectionTitle, Toggle, Txt } from '@/components/ui';
 import { useFamily } from '@/context/family';
 import { formatDate, formatShortDate } from '@/lib/dates';
 import { getRemindersEnabled, remindersSupported, setRemindersEnabled, syncPlanReminders } from '@/lib/notifications';
@@ -64,6 +65,8 @@ export default function Plan() {
           <Card>
             <WeekIndicator child={child} />
           </Card>
+
+          <Button title="Temporizador de siesta" icon="timer-outline" variant="secondary" style={{ marginTop: 12 }} onPress={() => router.push('/temporizador')} />
 
           <SectionTitle icon="bell-ring-outline">Recordatorios</SectionTitle>
           <ReminderSummary reminders={plan.reminders} />

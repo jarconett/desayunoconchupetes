@@ -46,8 +46,10 @@ export function Legend() {
 
 /**
  * Editor por día: se elige un "pincel" y se tocan las horas.
- * - Tocar la hora (08:00) marca los 60 minutos.
- * - Tocar un cuarto (:15, :30…) marca solo esos 15 minutos.
+ * Cada hora es un botón dividido en 4 partes (cuartos de hora):
+ * - tocar una parte marca esos 15 minutos;
+ * - tocar la hora (arriba) marca los 60 minutos;
+ * - tocar de nuevo con el mismo pincel lo borra.
  */
 export function DiaryDayEditor({
   entries,
@@ -68,7 +70,6 @@ export function DiaryDayEditor({
 
   const paint = (slots: { h: number; m: number }[]) => {
     if (disabled) return;
-    // Si ya estaban todas con el pincel elegido, se borran (tocar de nuevo = borrar)
     const all = slots.every(({ h, m }) => getSlot(d, h, m) === brush);
     onChange({ ...entries, [String(day)]: setSlots(d, slots, all ? null : brush) });
   };
@@ -84,64 +85,62 @@ export function DiaryDayEditor({
             onChange={onBrush}
           />
           <Txt variant="label" style={{ marginTop: 12 }}>
-            2. Toca la hora para marcar 60 min, o un cuarto para marcar 15 min
+            2. Toca la hora entera o solo sus partes de 15 min
           </Txt>
-          <Txt variant="small">Ej.: si se durmió a las 21:30, marca «Dormido» en :30 y :45 de las 21:00. Toca de nuevo para borrar.</Txt>
         </View>
       ) : null}
-      {DIARY_HOURS.map((h) => {
-        const qs = hourQuarters(d, h);
-        const whole = qs[0] && qs.every((q) => q === qs[0]) ? DIARY_STATE_MAP[qs[0]] : null;
-        return (
-          <View key={h} style={{ flexDirection: 'row', alignItems: 'stretch', gap: 4, marginBottom: 4 }}>
-            <Pressable
-              onPress={() => paint(QUARTERS.map((m) => ({ h, m })))}
-              accessibilityRole="button"
-              accessibilityLabel={`${hourLabel(h)}, marcar la hora entera`}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {DIARY_HOURS.map((h) => {
+          const qs = hourQuarters(d, h);
+          const whole = qs[0] && qs.every((q) => q === qs[0]) ? DIARY_STATE_MAP[qs[0]] : null;
+          const mixed = !whole && qs.some(Boolean);
+          return (
+            <View
+              key={h}
               style={{
-                width: 64,
-                justifyContent: 'center',
-                paddingHorizontal: 8,
+                width: '31%',
+                minWidth: 92,
+                flexGrow: 1,
                 borderRadius: radius.sm,
-                backgroundColor: whole?.color ?? '#fff',
                 borderWidth: 1.5,
                 borderColor: whole ? whole.text + '40' : colors.border,
+                backgroundColor: '#fff',
+                overflow: 'hidden',
               }}>
-              <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: whole?.text ?? colors.night }}>{hourLabel(h)}</Text>
-              <Text style={{ fontFamily: fonts.medium, fontSize: 9.5, color: colors.muted }}>60 min</Text>
-            </Pressable>
-            {QUARTERS.map((m, i) => {
-              const s = qs[i];
-              const info = s ? DIARY_STATE_MAP[s] : null;
-              return (
-                <Pressable
-                  key={m}
-                  onPress={() => paint([{ h, m }])}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${slotLabel(h, m)} ${info?.label ?? 'sin marcar'}`}
-                  style={{
-                    flex: 1,
-                    minHeight: 40,
-                    borderRadius: radius.sm,
-                    paddingHorizontal: 4,
-                    backgroundColor: info?.color ?? '#fff',
-                    borderWidth: 1,
-                    borderColor: info ? info.text + '33' : colors.border,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 10, color: info?.text ?? '#B8B3BE' }}>:{String(m).padStart(2, '0')}</Text>
-                  {info ? (
-                    <Text numberOfLines={1} style={{ fontFamily: fonts.bold, fontSize: 10.5, color: info.text }}>
-                      {info.short}
-                    </Text>
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </View>
-        );
-      })}
+              <Pressable
+                onPress={() => paint(QUARTERS.map((m) => ({ h, m })))}
+                accessibilityRole="button"
+                accessibilityLabel={`${hourLabel(h)}, marcar la hora entera`}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, paddingTop: 6, paddingBottom: 4 }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: whole?.text ?? colors.night }}>{hourLabel(h)}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: fonts.semibold, fontSize: 10.5, color: whole?.text ?? (mixed ? colors.muted : '#C2BEC6'), flexShrink: 1, marginLeft: 4 }}>
+                  {whole ? whole.short : mixed ? 'mixto' : '—'}
+                </Text>
+              </Pressable>
+              <View style={{ flexDirection: 'row', height: 36, gap: 3, paddingHorizontal: 4, paddingBottom: 5 }}>
+                {QUARTERS.map((m, i) => {
+                  const s = qs[i];
+                  const info = s ? DIARY_STATE_MAP[s] : null;
+                  return (
+                    <Pressable
+                      key={m}
+                      onPress={() => paint([{ h, m }])}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${slotLabel(h, m)} ${info?.label ?? 'sin marcar'}`}
+                      style={{ flex: 1, borderRadius: 5, backgroundColor: info?.color ?? '#F3EFE9', borderWidth: info ? 1 : 0, borderColor: info ? info.text + '55' : undefined }}
+                    />
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+      {!disabled ? (
+        <Txt variant="small" style={{ marginTop: 8 }}>
+          Cada botón tiene 4 partes: :00 · :15 · :30 · :45. Ej.: si se durmió a las 21:30, marca «Dormido» en las 2 últimas partes de las 21:00.
+        </Txt>
+      ) : null}
     </View>
   );
 }
