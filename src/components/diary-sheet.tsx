@@ -21,7 +21,7 @@ export interface SheetDay {
   note?: string;
 }
 
-const STATE_KEYS: DiaryState[] = ['despierto', 'siesta', 'rutina', 'dormido', 'despertar', 'dn_dormido'];
+const STATE_KEYS: DiaryState[] = ['despierto', 'siesta', 'rutina', 'dormido', 'despertar', 'llanto'];
 
 /** Cómputo exacto de un día (franjas de 15 min): horas de cada categoría y totales. */
 export function computeDay(hours: Record<string, DiaryState>) {
@@ -32,11 +32,11 @@ export function computeDay(hours: Record<string, DiaryState>) {
     const s = getSlot(hours, h, m);
     if (s) count[s] += 0.25;
     // Cada bloque seguido de D.N. cuenta como un despertar
-    if ((s === 'despertar' || s === 'dn_dormido') && prev !== s) despertares++;
+    if (s === 'despertar' && prev !== s) despertares++;
     prev = s;
   }
   const filled = filledQuarters(hours) / 4;
-  const nocturno = count.dormido + count.dn_dormido * 0.5;
+  const nocturno = count.dormido;
   const siestas = count.siesta;
   return { count, filled, nocturno, siestas, total: nocturno + siestas, despertares };
 }
@@ -87,7 +87,7 @@ export function DiarySheet({ days, ageMonths, title }: { days: SheetDay[]; ageMo
   const avg = (f: (r: (typeof rows)[number]) => number) => (base.length ? base.reduce((s, r) => s + f(r), 0) / base.length : 0);
   const avgTotal = avg((r) => r.c.total);
   const avgSiestas = avg((r) => r.c.siestas);
-  const SLEEP: DiaryState[] = ['siesta', 'dormido', 'dn_dormido'];
+  const SLEEP: DiaryState[] = ['siesta', 'dormido'];
   // Días que estaba durmiendo a esa hora (al menos media hora de esa hora)
   const hourSleepCount = DIARY_HOURS.map(
     (h) => rows.filter((r) => hourQuarters(r.hours, h).filter((q) => q && SLEEP.includes(q)).length >= 2).length,
@@ -209,8 +209,8 @@ export function DiarySheet({ days, ageMonths, title }: { days: SheetDay[]; ageMo
 
       <View style={{ marginTop: 10 }}>
         <Txt variant="small">
-          Cada hora (de 8:00 a 7:00 del día siguiente) se divide en 4 franjas de 15 min. Tiempos en horas:minutos; columnas de categorías = tiempo exacto de cada estado. Nocturno = Dormido + ½ de
-          D.N./dormido. Media calculada con {base.length} {complete.length ? 'días completos' : 'días registrados'}
+          Cada hora (de 8:00 a 7:00 del día siguiente) se divide en 4 franjas de 15 min. Tiempos en horas:minutos; columnas de categorías = tiempo exacto de cada estado. Nocturno = Dormido; el
+          llanto cuenta como tiempo despierto. Media calculada con {base.length} {complete.length ? 'días completos' : 'días registrados'}
           {complete.length && filled.length > complete.length ? ` (se excluyen ${filled.length - complete.length} días incompletos, marcados con *)` : ''}. Fila
           inferior: nº de días que estaba durmiendo a esa hora (al menos 30 min).
         </Txt>

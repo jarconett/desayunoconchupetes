@@ -11,25 +11,26 @@ import { Chips, Row, Txt } from './ui';
 export type DiaryEntries = SleepDiary['entries'];
 
 /**
- * Horas de sueño de un día, en franjas de 15 min (nocturno = dormido + la mitad
- * de D.N./dormido; diurno = siesta). Cada bloque seguido de D.N. es un despertar.
+ * Horas de un día, en franjas de 15 min (nocturno = dormido; diurno = siesta;
+ * el llanto cuenta como tiempo despierto). Cada bloque seguido de D.N. es un despertar.
  */
 export function daySummary(entries: DiaryEntries, day: number) {
   const d = entries[String(day)];
   let siesta = 0;
   let noche = 0;
   let despertares = 0;
+  let llanto = 0;
   let prev: DiaryState | undefined;
   for (const { h, m } of DIARY_SLOTS) {
     const s = getSlot(d, h, m);
     if (s === 'siesta') siesta += 0.25;
     if (s === 'dormido') noche += 0.25;
-    if (s === 'dn_dormido') noche += 0.125;
-    if ((s === 'despertar' || s === 'dn_dormido') && prev !== s) despertares += 1;
+    if (s === 'llanto') llanto += 0.25;
+    if (s === 'despertar' && prev !== s) despertares += 1;
     prev = s;
   }
   // filled = horas rellenadas (96 cuartos = 24 h)
-  return { siesta, noche, total: siesta + noche, despertares, filled: filledQuarters(d) / 4 };
+  return { siesta, noche, total: siesta + noche, despertares, llanto, filled: filledQuarters(d) / 4 };
 }
 
 export function Legend() {

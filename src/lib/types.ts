@@ -87,7 +87,7 @@ export interface PathologyHistory {
   updated_at: string;
 }
 
-export type DiaryState = 'despierto' | 'siesta' | 'rutina' | 'dormido' | 'despertar' | 'dn_dormido';
+export type DiaryState = 'despierto' | 'siesta' | 'rutina' | 'dormido' | 'despertar' | 'llanto';
 
 export interface SleepDiary {
   id: string;

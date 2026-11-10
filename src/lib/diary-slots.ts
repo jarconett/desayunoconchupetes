@@ -22,7 +22,9 @@ export const DIARY_SLOTS = DIARY_HOURS.flatMap((h) => QUARTERS.map((m) => ({ h, 
 /** Estado de una franja (admite el formato antiguo por horas). */
 export function getSlot(day: DayEntries | undefined, h: number, m: number): DiaryState | undefined {
   if (!day) return undefined;
-  return day[slotKey(h, m)] ?? day[String(h)];
+  const v = (day[slotKey(h, m)] ?? day[String(h)]) as string | undefined;
+  // Categoría antigua «D.N. / dormido (<1h)»: era un despertar nocturno corto
+  return (v === 'dn_dormido' ? 'despertar' : v) as DiaryState | undefined;
 }
 
 /** Los 4 estados de una hora. */

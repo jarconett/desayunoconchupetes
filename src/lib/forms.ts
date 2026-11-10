@@ -194,7 +194,8 @@ export const DIARY_STATES: { key: DiaryState; label: string; short: string; colo
   { key: 'rutina', label: 'Rutina', short: 'Rutina', color: '#FBE3D6', text: '#A75D40', icon: 'bathtub-outline' },
   { key: 'dormido', label: 'Dormido', short: 'Dorm.', color: '#DCE2F2', text: '#3D4A70', icon: 'weather-night' },
   { key: 'despertar', label: 'Desp. nocturno', short: 'D.N.', color: '#F8DDE4', text: '#A24A63', icon: 'alarm-light-outline' },
-  { key: 'dn_dormido', label: 'D.N. / dormido (<1h)', short: 'D.N./d', color: '#E8E1F5', text: '#6A5A99', icon: 'weather-night-partly-cloudy' },
+  // Violeta intenso: se distingue bien de los demás colores (todos pastel claros)
+  { key: 'llanto', label: 'Llanto', short: 'Llanto', color: '#C9AEF2', text: '#4E2A86', icon: 'emoticon-cry-outline' },
 ];
 
 export const DIARY_STATE_MAP = Object.fromEntries(DIARY_STATES.map((s) => [s.key, s])) as Record<
@@ -211,7 +212,7 @@ export const DIARY_HOURS = Array.from({ length: 24 }, (_, i) => (i + 8) % 24);
 export const hourLabel = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 export const DIARY_INSTRUCTIONS =
-  'Rellenad esta tabla poniendo a qué horas del día está despierto, si hace siesta, la hora a la que empezáis la rutina antes de dormir y hasta qué hora dura, la hora a la que se va a dormir y los despertares nocturnos. Si el despertar nocturno dura menos de una hora, usad "D.N. / dormido". Cada hora se divide en cuartos (15, 30, 45 y 60 minutos): tocad la hora para marcarla entera o solo los cuartos que correspondan.';
+  'Rellenad esta tabla poniendo a qué horas del día está despierto, si hace siesta, la hora a la que empezáis la rutina antes de dormir y hasta qué hora dura, la hora a la que se va a dormir y los despertares nocturnos. Si llora, marcad «Llanto» en los cuartos de hora que dure (de día o de noche). Cada hora se divide en cuartos (15, 30, 45 y 60 minutos): tocad la hora para marcarla entera o solo los cuartos que correspondan.';
 
 export const SLEEP_SIGNALS = [
   {

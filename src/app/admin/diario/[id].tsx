@@ -39,8 +39,8 @@ export default function DiarioAdmin() {
   const weekDays = diaryDays(weekStart);
 
   const days = WEEK_DAYS.map((_, i) => daySummary(diary.entries, i)).filter((d) => d.filled > 0);
-  const mean = (k: 'noche' | 'siesta' | 'total' | 'despertares') => (days.length ? days.reduce((s, d) => s + d[k], 0) / days.length : null);
-  const avg = (k: 'noche' | 'siesta' | 'total') => (mean(k) == null ? '—' : formatDuration(mean(k)!));
+  const mean = (k: 'noche' | 'siesta' | 'total' | 'despertares' | 'llanto') => (days.length ? days.reduce((s, d) => s + d[k], 0) / days.length : null);
+  const avg = (k: 'noche' | 'siesta' | 'total' | 'llanto') => (mean(k) == null ? '—' : formatDuration(mean(k)!));
 
   return (
     <Screen
@@ -56,9 +56,10 @@ export default function DiarioAdmin() {
         <Metric label="Nocturno" value={avg('noche')} color={colors.lavender} />
         <Metric label="Siestas" value={avg('siesta')} color={colors.mint} />
         <Metric label="Despertares / noche" value={mean('despertares') == null ? '—' : mean('despertares')!.toFixed(1).replace('.', ',')} color={colors.rose} />
+        <Metric label="Llanto / día" value={avg('llanto')} color="#E9DEFB" />
       </Row>
       <Txt variant="small" style={{ marginTop: 6 }}>
-        Medias de {days.length} {days.length === 1 ? 'día registrado' : 'días registrados'} (en franjas de 15 min; D.N./dormido cuenta como la mitad de sueño).
+        Medias de {days.length} {days.length === 1 ? 'día registrado' : 'días registrados'} (en franjas de 15 min; el llanto cuenta como tiempo despierto).
       </Txt>
 
       <SectionTitle
