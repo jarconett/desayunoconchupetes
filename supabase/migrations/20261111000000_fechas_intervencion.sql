@@ -105,6 +105,10 @@ create trigger sync_subscription_start
 --     familias con un único peque en intervención → la fecha de la
 --     suscripción manda (es la que se ha editado en estos casos)
 -- ---------------------------------------------------------------------
+-- (en el SQL Editor no hay usuario conectado: se desactiva un momento la
+--  protección que impide a las familias cambiar estas fechas)
+alter table public.children disable trigger protect_child_status;
+
 update public.children c
    set intervention_start = s.start_date
   from public.subscriptions s
@@ -114,6 +118,8 @@ update public.children c
    and c.intervention_start is distinct from s.start_date
    and (select count(*) from public.children c2
          where c2.family_id = c.family_id and c2.status = 'intervencion') = 1;
+
+alter table public.children enable trigger protect_child_status;
 
 -- ---------------------------------------------------------------------
 -- 1d. Recalcular las fechas de todos los diarios ya guardados
