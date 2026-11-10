@@ -7,7 +7,7 @@ import { Badge, Button, Card, Empty, HeroHeader, IconBubble, Input, ListItem, Ro
 import { useAuth } from '@/context/auth';
 import { useFamily } from '@/context/family';
 import { DESCANSO_DOC_KEY, PATHOLOGY_RANGE_LABEL } from '@/lib/forms';
-import { formatShortDate, interventionWeek, pathologyRangeFor } from '@/lib/dates';
+import { diaryDays, formatShortDate, interventionWeek, pathologyRangeFor, weekStartDate } from '@/lib/dates';
 import { colors } from '@/lib/theme';
 import type { Child } from '@/lib/types';
 
@@ -120,7 +120,7 @@ function ChildSpace({ child, multiple }: { child: Child; multiple: boolean }) {
             iconBg={colors.mint}
             iconColor={colors.mintDark}
             title={`Diario de sueño · semana ${w}`}
-            subtitle={available ? (diary?.submitted ? `Enviado el ${formatShortDate(diary.submitted_at!)}` : 'Registro semanal hora a hora') : 'Se desbloquea esa semana'}
+            subtitle={available ? (diary?.submitted ? `Enviado el ${formatShortDate(diary.submitted_at!)}` : 'Registro semanal hora a hora') : unlockText(child, w)}
             locked={!available}
             onPress={() => router.push(`/diario/${child.id}/${w}`)}
             right={
@@ -213,4 +213,12 @@ function InterventionRequestCard({ child }: { child: Child }) {
       ) : null}
     </Card>
   );
+}
+
+/** «Se desbloquea el miércoles 25/11» según la fecha de inicio de la intervención */
+function unlockText(child: Child, week: number) {
+  const start = weekStartDate(child, week);
+  if (!start) return 'Se desbloquea cuando empiece esa semana';
+  const d = diaryDays(start)[0];
+  return `Se desbloquea el ${d.name.toLowerCase()} ${formatShortDate(start).slice(0, 5)}`;
 }

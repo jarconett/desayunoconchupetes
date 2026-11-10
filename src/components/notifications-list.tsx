@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useAuth } from '@/context/auth';
 import { formatDateTime } from '@/lib/dates';
@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 import type { AppNotification } from '@/lib/types';
 
-import { Button, Card, Empty, HeroHeader, IconBubble, Row, Screen, Txt } from './ui';
+import { Button, Card, Empty, HeroHeader, Icon, IconBubble, Row, Screen, Txt, confirmAction, notify } from './ui';
 
 export function NotificationsScreen({ back, onChanged }: { back?: boolean; onChanged?: () => void }) {
   const { session } = useAuth();
@@ -38,6 +38,34 @@ export function NotificationsScreen({ back, onChanged }: { back?: boolean; onCha
     onChanged?.();
   };
 
+  /** Descartar (borrar) un aviso */
+  const dismiss = async (n: AppNotification) => {
+    setItems((prev) => prev.filter((x) => x.id !== n.id));
+    const { error } = await supabase.from('notifications').delete().eq('id', n.id);
+    if (error) {
+      notify('No se pudo descartar', error.message);
+      await load();
+    }
+    onChanged?.();
+  };
+
+  /** Descartar todos los avisos (o solo los ya leídos) */
+  const dismissAll = async (onlyRead: boolean) => {
+    if (!session) return;
+    const ok = await confirmAction(
+      onlyRead ? 'Borrar avisos leídos' : 'Borrar todos los avisos',
+      onlyRead ? 'Se eliminarán los avisos que ya has leído.' : 'Se eliminarán todos tus avisos, también los no leídos.',
+      'Borrar',
+    );
+    if (!ok) return;
+    let q = supabase.from('notifications').delete().eq('user_id', session.user.id);
+    if (onlyRead) q = q.eq('read', true);
+    const { error } = await q;
+    if (error) notify('No se pudo borrar', error.message);
+    await load();
+    onChanged?.();
+  };
+
   const open = async (n: AppNotification) => {
     if (!n.read) {
       await supabase.from('notifications').update({ read: true }).eq('id', n.id);
@@ -59,6 +87,12 @@ export function NotificationsScreen({ back, onChanged }: { back?: boolean; onCha
           right={items.some((i) => !i.read) ? <Button small variant="soft" title="Marcar leídos" onPress={markAll} /> : undefined}
         />
       }>
+      {items.length > 0 ? (
+        <Row gap={8} style={{ flexWrap: 'wrap', marginBottom: 10 }}>
+          {items.some((i) => i.read) ? <Button small variant="soft" icon="broom" title="Borrar leídos" onPress={() => dismissAll(true)} /> : null}
+          <Button small variant="ghost" icon="trash-can-outline" title="Borrar todos" onPress={() => dismissAll(false)} />
+        </Row>
+      ) : null}
       {!loading && items.length === 0 ? <Empty icon="bell-sleep-outline" title="Sin avisos por ahora" text="Aquí aparecerán las confirmaciones de citas y novedades." /> : null}
       {items.map((n) => (
         <Card key={n.id} onPress={() => open(n)} style={{ marginBottom: 8, padding: 12 }} tint={n.read ? undefined : colors.primarySoft}>
@@ -73,6 +107,14 @@ export function NotificationsScreen({ back, onChanged }: { back?: boolean; onCha
                 {formatDateTime(n.created_at)}
               </Txt>
             </View>
+            <Pressable
+              onPress={() => dismiss(n)}
+              accessibilityRole="button"
+              accessibilityLabel="Descartar aviso"
+              hitSlop={10}
+              style={{ padding: 4, borderRadius: 14, backgroundColor: n.read ? colors.bg : '#ffffffaa' }}>
+              <Icon name="close" size={18} color={colors.muted} />
+            </Pressable>
           </Row>
         </Card>
       ))}
