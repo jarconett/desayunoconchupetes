@@ -7,7 +7,7 @@ import { Button, Card, Chips, Empty, HeroHeader, Input, Row, Screen, SectionTitl
 import { useFamily } from '@/context/family';
 import { DIARY_SLOTS, formatDuration, getSlot, setSlots } from '@/lib/diary-slots';
 import { DIARY_INSTRUCTIONS, SLEEP_SIGNALS, WEEK_DAYS } from '@/lib/forms';
-import { addDays, formatShortDate, parseISODate, startOfWeek, toISODate, weekStartDate } from '@/lib/dates';
+import { addDays, diaryDays, diaryWeekStart, formatShortDate, parseISODate } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 import type { DiaryState } from '@/lib/types';
@@ -39,10 +39,11 @@ export default function Diario() {
   if (!child) return <Screen header={<HeroHeader back title="Diario de sueño" />}><Empty title="No encontrado" /></Screen>;
 
   const editable = fam.subscriptionActive && child.status === 'intervencion';
-  const startIso = existing?.week_start ?? weekStartDate(child, week) ?? toISODate(startOfWeek(new Date()));
+  // La semana N empieza el día exacto en que empieza esa semana de intervención
+  // (si la asesora cambia la fecha de inicio, las fechas se recalculan solas)
+  const startIso = diaryWeekStart(child, week, existing?.week_start);
   const start = parseISODate(startIso);
-  // Si la semana no empieza en lunes, mostramos la fecha real de cada día
-  const dayDate = (i: number) => addDays(startOfWeek(start), i);
+  const days = diaryDays(startIso);
 
   const change = (e: DiaryEntries) => {
     setEntries(e);
@@ -72,7 +73,7 @@ export default function Diario() {
       {
         child_id: child.id,
         week_number: week,
-        week_start: toISODate(startOfWeek(start)),
+        week_start: startIso,
         entries,
         day_notes: dayNotes,
         notes: notes.trim() || null,
@@ -102,7 +103,7 @@ export default function Diario() {
         <HeroHeader
           back
           title={`Diario · semana ${week}`}
-          subtitle={`${child.name} · semana del ${formatShortDate(startOfWeek(start))}${existing?.submitted ? ' · enviado' : ''}`}
+          subtitle={`${child.name} · del ${formatShortDate(start)} al ${formatShortDate(addDays(start, 6))}${existing?.submitted ? ' · enviado' : ''}`}
         />
       }>
       <Card tint={colors.primarySoft}>
@@ -124,18 +125,18 @@ export default function Diario() {
 
       {view === 'semana' ? (
         <Card>
-          <DiaryWeekTable entries={entries} />
+          <DiaryWeekTable entries={entries} startDate={startIso} />
           <View style={{ marginTop: 12 }}>
             <Legend />
           </View>
         </Card>
       ) : (
         <>
-          <DayTabs day={day} onChange={setDay} entries={entries} />
+          <DayTabs day={day} onChange={setDay} entries={entries} startDate={startIso} />
           <Card style={{ marginTop: 12 }}>
             <Row style={{ justifyContent: 'space-between', marginBottom: 12 }}>
               <Txt variant="h2">
-                {WEEK_DAYS[day]} {dayDate(day).getDate()}
+                {days[day].name} {days[day].date.getDate()}
               </Txt>
               <Txt variant="small">
                 ☾ {formatDuration(sum.noche)} · ☀ {formatDuration(sum.siesta)} · {sum.despertares} D.N.

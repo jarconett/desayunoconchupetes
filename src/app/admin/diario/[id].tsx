@@ -8,7 +8,7 @@ import { Button, Card, Empty, HeroHeader, Loading, Row, Screen, SectionTitle, Tx
 import { useAdmin } from '@/context/admin';
 import { WEEK_DAYS } from '@/lib/forms';
 import { formatDuration } from '@/lib/diary-slots';
-import { ageInMonths, formatShortDate, parseISODate } from '@/lib/dates';
+import { addDays, ageInMonths, diaryDays, diaryWeekStart, formatShortDate, parseISODate } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 import type { SleepDiary } from '@/lib/types';
@@ -34,6 +34,9 @@ export default function DiarioAdmin() {
   if (!loaded) return <Loading />;
   if (!diary) return <Screen wide header={<HeroHeader back title="Diario" />}><Empty title="No encontrado" /></Screen>;
   const child = adm.children.find((c) => c.id === diary.child_id);
+  // Fechas de la semana según el inicio de intervención actual del peque
+  const weekStart = diaryWeekStart(child, diary.week_number, diary.week_start);
+  const weekDays = diaryDays(weekStart);
 
   const days = WEEK_DAYS.map((_, i) => daySummary(diary.entries, i)).filter((d) => d.filled > 0);
   const mean = (k: 'noche' | 'siesta' | 'total' | 'despertares') => (days.length ? days.reduce((s, d) => s + d[k], 0) / days.length : null);
@@ -45,7 +48,7 @@ export default function DiarioAdmin() {
         <HeroHeader
           back
           title={`Diario · semana ${diary.week_number}`}
-          subtitle={`${child?.name ?? ''}${diary.week_start ? ` · semana del ${formatShortDate(diary.week_start)}` : ''}${diary.submitted_at ? ` · enviado ${formatShortDate(diary.submitted_at)}` : ' · borrador'}`}
+          subtitle={`${child?.name ?? ''} · del ${formatShortDate(weekStart)} al ${formatShortDate(addDays(parseISODate(weekStart), 6))}${diary.submitted_at ? ` · enviado ${formatShortDate(diary.submitted_at)}` : ' · borrador'}`}
         />
       }>
       <Row style={{ flexWrap: 'wrap' }} gap={8}>
@@ -65,15 +68,15 @@ export default function DiarioAdmin() {
       </SectionTitle>
       <Card>
         <DiarySheet
-          days={sheetDaysFromDiaries([diary])}
-          ageMonths={child ? ageInMonths(child.birth_date, diary.week_start ? parseISODate(diary.week_start) : new Date()) : null}
+          days={sheetDaysFromDiaries([diary], child)}
+          ageMonths={child ? ageInMonths(child.birth_date, parseISODate(weekStart)) : null}
           title={`${child?.name ?? 'peque'}-semana-${diary.week_number}`}
         />
       </Card>
 
       <SectionTitle icon="table">Tabla semanal</SectionTitle>
       <Card>
-        <DiaryWeekTable entries={diary.entries} />
+        <DiaryWeekTable entries={diary.entries} startDate={weekStart} />
         <View style={{ marginTop: 12 }}>
           <Legend />
         </View>
@@ -87,7 +90,7 @@ export default function DiarioAdmin() {
               .filter(([, v]) => v?.trim())
               .map(([d, v]) => (
                 <Txt key={d} style={{ marginBottom: 6 }}>
-                  <Txt style={{ fontFamily: 'Quicksand_700Bold' }}>{WEEK_DAYS[Number(d)]}: </Txt>
+                  <Txt style={{ fontFamily: 'Quicksand_700Bold' }}>{weekDays[Number(d)] ? `${weekDays[Number(d)].name} ${weekDays[Number(d)].date.getDate()}` : WEEK_DAYS[Number(d)]}: </Txt>
                   {v}
                 </Txt>
               ))}

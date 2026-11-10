@@ -1,10 +1,11 @@
 import { Platform, ScrollView, Text, View } from 'react-native';
 
+import { diaryDays, diaryWeekStart } from '@/lib/dates';
 import { DIARY_SLOTS, filledQuarters, formatHM, getSlot, hourQuarters, slotLabel } from '@/lib/diary-slots';
 import { DIARY_HOURS, DIARY_STATES, DIARY_STATE_MAP } from '@/lib/forms';
 import { daytimeSleepPercentile, totalSleepPercentile, type PercentileResult } from '@/lib/percentiles';
 import { colors, fonts, radius } from '@/lib/theme';
-import type { DiaryState } from '@/lib/types';
+import type { Child, DiaryState } from '@/lib/types';
 
 import { Button, Row, Txt } from './ui';
 
@@ -239,28 +240,27 @@ export function DiarySheet({ days, ageMonths, title }: { days: SheetDay[]; ageMo
   );
 }
 
-/** Convierte diarios semanales en filas de la hoja (un día por fila, con su fecha). */
+/**
+ * Convierte diarios semanales en filas de la hoja (un día por fila, con su fecha).
+ * Si se pasa el peque, la fecha de cada semana sale de su inicio de intervención
+ * (así se recalcula sola si la asesora cambia la fecha de inicio).
+ */
 export function sheetDaysFromDiaries(
   diaries: { week_number: number; week_start: string | null; entries: Record<string, Record<string, DiaryState>>; day_notes?: Record<string, string> }[],
+  child?: Child | null,
 ): SheetDay[] {
   const SHORT = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
   return [...diaries]
     .sort((a, b) => a.week_number - b.week_number)
-    .flatMap((d) =>
-      SHORT.map((wd, day) => {
-        let label = `S${d.week_number} ${wd}`;
-        if (d.week_start) {
-          const [y, m, dd] = d.week_start.split('-').map(Number);
-          const date = new Date(y, m - 1, dd + day);
-          label = `${wd} ${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-        }
-        return {
-          key: `${d.week_number}-${day}`,
-          label,
-          week: d.week_number,
-          hours: d.entries?.[String(day)] ?? {},
-          note: d.day_notes?.[String(day)],
-        };
-      }),
-    );
+    .flatMap((d) => {
+      const startIso = child?.intervention_start ? diaryWeekStart(child, d.week_number, d.week_start) : d.week_start;
+      const days = startIso ? diaryDays(startIso) : null;
+      return SHORT.map((wd, day) => ({
+        key: `${d.week_number}-${day}`,
+        label: days ? days[day].label : `S${d.week_number} ${wd}`,
+        week: d.week_number,
+        hours: d.entries?.[String(day)] ?? {},
+        note: d.day_notes?.[String(day)],
+      }));
+    });
 }

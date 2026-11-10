@@ -2,8 +2,8 @@
 -- Desayuno con Chupetes · Actualización 3
 --  1. Fecha de inicio de la intervención y suscripción siempre sincronizadas
 --     (se cambie desde «Suscripción del servicio» o desde la ficha del peque)
---  2. Al cambiar la fecha se recalculan las semanas de los diarios
---     y se avisa a la familia
+--  2. Al cambiar la fecha se recalculan las fechas de cada semana del diario
+--     (semana N = inicio + 7·(N-1), el día exacto) y se avisa a la familia
 --  3. Seguridad: las funciones de avisos solo se pueden usar internamente
 --
 -- Cómo aplicarla: Supabase > SQL Editor > New query > pegar todo > Run
@@ -25,9 +25,9 @@ begin
   end if;
 
   if new.intervention_start is distinct from old.intervention_start then
-    -- Cada semana del diario empieza el lunes de su semana de intervención
+    -- La semana N del diario empieza el día exacto de esa semana de intervención
     update public.sleep_diaries d
-       set week_start = date_trunc('week', new.intervention_start + (d.week_number - 1) * 7)::date
+       set week_start = new.intervention_start + (d.week_number - 1) * 7
      where d.child_id = new.id;
 
     -- Solo si se cambia una fecha que ya existía (al empezar ya llega «¡Comenzamos!»)
@@ -114,6 +114,17 @@ update public.children c
    and c.intervention_start is distinct from s.start_date
    and (select count(*) from public.children c2
          where c2.family_id = c.family_id and c2.status = 'intervencion') = 1;
+
+-- ---------------------------------------------------------------------
+-- 1d. Recalcular las fechas de todos los diarios ya guardados
+--     (antes se redondeaban al lunes; ahora la semana N empieza el día exacto)
+-- ---------------------------------------------------------------------
+update public.sleep_diaries d
+   set week_start = c.intervention_start + (d.week_number - 1) * 7
+  from public.children c
+ where c.id = d.child_id
+   and c.intervention_start is not null
+   and d.week_start is distinct from c.intervention_start + (d.week_number - 1) * 7;
 
 -- ---------------------------------------------------------------------
 -- 2. Tiempo real: la app de la familia se refresca al cambiar sus peques

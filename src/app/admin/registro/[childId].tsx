@@ -32,7 +32,7 @@ export default function RegistroCompleto() {
         <Empty icon="notebook-outline" title="Sin diarios todavía" text="Cuando la familia rellene el diario de sueño aparecerá aquí." />
       ) : (
         <Card>
-          <DiarySheet days={sheetDaysFromDiaries(diaries)} ageMonths={child ? ageInMonths(child.birth_date) : null} title={`${child?.name ?? 'peque'}-registro-completo`} />
+          <DiarySheet days={sheetDaysFromDiaries(diaries, child)} ageMonths={child ? ageInMonths(child.birth_date) : null} title={`${child?.name ?? 'peque'}-registro-completo`} />
         </Card>
       )}
     </Screen>

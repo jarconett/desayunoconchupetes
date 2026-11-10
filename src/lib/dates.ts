@@ -145,3 +145,35 @@ export function endTimePreview(minutes: number, from: Date = new Date()) {
   const days = Math.round((dayB - dayA) / 86400000);
   return { end, time, days, label: days > 0 ? `${time} (+${days}d)` : time };
 }
+
+/**
+ * Primer día de la semana N del diario: el día exacto en que empieza esa semana
+ * de intervención (inicio + 7·(N-1)). Si el peque aún no tiene fecha de inicio,
+ * se usa la guardada en el diario o el lunes de esta semana.
+ */
+export function diaryWeekStart(child: Child | undefined | null, week: number, stored?: string | null): string {
+  if (child?.intervention_start) return weekStartDate(child, week)!;
+  return stored ?? toISODate(startOfWeek(new Date()));
+}
+
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DAY_SHORT = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
+const DAY_LETTER = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+
+/** Los 7 días de una semana del diario a partir de su primer día (con nombre real de cada día). */
+export function diaryDays(startIso: string) {
+  const start = parseISODate(startIso);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = addDays(start, i);
+    const w = d.getDay();
+    return {
+      date: d,
+      iso: toISODate(d),
+      name: DAY_NAMES[w],
+      short: DAY_SHORT[w],
+      letter: DAY_LETTER[w],
+      /** "Mi 18/11" */
+      label: `${DAY_SHORT[w]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`,
+    };
+  });
+}

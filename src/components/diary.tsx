@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { DIARY_SLOTS, filledQuarters, formatDuration, getSlot, hourQuarters, setSlots, QUARTERS, slotLabel } from '@/lib/diary-slots';
+import { diaryDays } from '@/lib/dates';
 import { DIARY_HOURS, DIARY_STATES, DIARY_STATE_MAP, WEEK_DAYS, WEEK_DAYS_SHORT, hourLabel } from '@/lib/forms';
 import { colors, fonts, radius } from '@/lib/theme';
 import type { DiaryState, SleepDiary } from '@/lib/types';
@@ -146,16 +147,18 @@ export function DiaryDayEditor({
 }
 
 /** Tabla semanal completa (como la plantilla en papel). */
-export function DiaryWeekTable({ entries }: { entries: DiaryEntries }) {
+export function DiaryWeekTable({ entries, startDate }: { entries: DiaryEntries; startDate?: string | null }) {
+  // Nombres reales de los días si se conoce el primer día de la semana (p. ej. «Mi 18»)
+  const heads = startDate ? diaryDays(startDate).map((d) => `${d.short} ${d.date.getDate()}`) : WEEK_DAYS.map((d) => d.slice(0, 3));
   const cellW = 62;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator>
       <View>
         <View style={{ flexDirection: 'row' }}>
           <View style={{ width: 54 }} />
-          {WEEK_DAYS.map((d) => (
+          {heads.map((d) => (
             <Text key={d} style={{ width: cellW, textAlign: 'center', fontFamily: fonts.bold, fontSize: 12, color: colors.night, paddingVertical: 6 }}>
-              {d.slice(0, 3)}
+              {d}
             </Text>
           ))}
         </View>
@@ -203,17 +206,28 @@ export function DiaryWeekTable({ entries }: { entries: DiaryEntries }) {
   );
 }
 
-export function DayTabs({ day, onChange, entries }: { day: number; onChange: (d: number) => void; entries: DiaryEntries }) {
+export function DayTabs({
+  day,
+  onChange,
+  entries,
+  startDate,
+}: {
+  day: number;
+  onChange: (d: number) => void;
+  entries: DiaryEntries;
+  startDate?: string | null;
+}) {
+  const days = startDate ? diaryDays(startDate) : null;
   return (
     <View style={{ flexDirection: 'row', gap: 6 }}>
-      {WEEK_DAYS_SHORT.map((d, i) => {
+      {(days ? days.map((x) => x.letter) : WEEK_DAYS_SHORT).map((d, i) => {
         const filled = filledQuarters(entries[String(i)]) / 4;
         const selected = i === day;
         return (
           <Pressable
             key={i}
             onPress={() => onChange(i)}
-            accessibilityLabel={WEEK_DAYS[i]}
+            accessibilityLabel={days ? `${days[i].name} ${days[i].date.getDate()}` : WEEK_DAYS[i]}
             style={{
               flex: 1,
               alignItems: 'center',
@@ -224,6 +238,7 @@ export function DayTabs({ day, onChange, entries }: { day: number; onChange: (d:
               borderColor: selected ? colors.night : colors.border,
             }}>
             <Text style={{ fontFamily: fonts.bold, color: selected ? '#fff' : colors.text }}>{d}</Text>
+            {days ? <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: selected ? '#ffffffcc' : colors.muted }}>{days[i].date.getDate()}</Text> : null}
             <View
               style={{
                 marginTop: 4,
