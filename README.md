@@ -75,7 +75,7 @@ supabase/migrations/   esquema de base de datos, permisos y avisos automáticos
    4. [`supabase/migrations/20261112000000_descartar_avisos.sql`](supabase/migrations/20261112000000_descartar_avisos.sql) (permite descartar los propios avisos)
 3. En **Authentication → URL Configuration**:
    - **Site URL**: `desayunoconchupetes://` (o la dirección fija de la web si la tienes). Es a donde lleva un enlace de correo cuando no se indica otra cosa; el valor por defecto (`http://localhost:3000`) provoca el error *Cannot GET /*.
-   - **Redirect URLs**: `desayunoconchupetes://**`, `https://*.trycloudflare.com/**` y `http://localhost:8080/**` (y tu dominio, si lo tienes).
+   - **Redirect URLs**: `desayunoconchupetes://**`, `https://*.trycloudflare.com/**` y `http://localhost:8081/**` (y tu dominio, si lo tienes).
 4. (Opcional) En **Authentication → Email Templates** traduce los correos al español.
 
 > 🔐 La cuenta que se registre con **desayunoconchupetes@gmail.com** se crea automáticamente como **administradora**. Desde *Usuarios* puede dar acceso de administradora a otras personas.
@@ -120,7 +120,7 @@ El PC hace de servidor de la web y la publica en internet con un **túnel gratui
    - instala las dependencias (solo la primera vez o si cambian),
    - pide la **URL y la clave anon de Supabase** la primera vez y las guarda en `.env`,
    - **genera la web** (`dist/`) solo cuando hay cambios,
-   - arranca el servidor web (`servidor/servidor-web.js`, sin dependencias) en `http://localhost:8080` y en la red local,
+   - arranca el servidor web (`servidor/servidor-web.js`, sin dependencias) en `http://localhost:8081` y en la red local,
    - descarga `cloudflared` (solo la primera vez) y abre el túnel: muestra el **enlace público** `https://xxxx.trycloudflare.com`, lo copia al portapapeles y lo guarda en `ENLACE-PUBLICO.txt`,
    - si se corta internet, reabre el túnel solo.
 4. Deja la ventana abierta mientras quieras que la app esté disponible. **Q** la detiene.

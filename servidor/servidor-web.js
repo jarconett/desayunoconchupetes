@@ -10,7 +10,7 @@ const path = require('path');
 const zlib = require('zlib');
 const os = require('os');
 
-const PUERTO = Number(process.argv[2] || process.env.PUERTO || 8080);
+const PUERTO = Number(process.argv[2] || process.env.PUERTO || 8081);
 const RAIZ = path.resolve(__dirname, '..', 'dist');
 const INDEX = path.join(RAIZ, 'index.html');
 

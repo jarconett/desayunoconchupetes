@@ -6,7 +6,7 @@
 #  3. Instala dependencias
 #  4. Pide los datos de Supabase la primera vez (.env)
 #  5. Genera la web (solo si hay cambios)
-#  6. Arranca el servidor web en el puerto 8080
+#  6. Arranca el servidor web en el puerto 8081
 #  7. Publica la web en internet con un tunel gratuito de Cloudflare
 #
 #  Se lanza desde iniciar-desayunoconchupetes.bat
@@ -15,7 +15,7 @@
 # 'Continue': en PowerShell 5 los avisos de git/npm por stderr no deben parar el script
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'   # descargas mucho mas rapidas en PowerShell 5
-$Puerto = 8080
+$Puerto = 8081
 $Raiz = Split-Path -Parent $PSScriptRoot
 $Herramientas = Join-Path $Raiz 'herramientas'
 $Logs = Join-Path $Raiz 'logs'
@@ -194,11 +194,11 @@ function Iniciar-Tunel {
 
 try {
     Titulo 'Arrancando el servidor web'
-    # Si el puerto 8080 esta ocupado por otro programa, se usa el siguiente libre
+    # Si el puerto 8081 esta ocupado por otro programa, se usa el siguiente libre
     while (Puerto-Ocupado $Puerto) {
         Aviso "El puerto $Puerto esta ocupado por otro programa: se prueba el $($Puerto + 1)"
         $Puerto++
-        if ($Puerto -gt 8100) { Fallo 'No hay puertos libres entre 8080 y 8100.' }
+        if ($Puerto -gt 8100) { Fallo 'No hay puertos libres entre 8081 y 8100.' }
     }
     $logSrv = Join-Path $Logs 'servidor.log'
     $logSrvErr = Join-Path $Logs 'servidor-error.log'
