@@ -71,6 +71,7 @@ supabase/migrations/   esquema de base de datos, permisos y avisos automáticos
 2. Ve a **SQL Editor** y ejecuta, **en este orden**, el contenido de:
    1. [`supabase/migrations/20261109000000_esquema_inicial.sql`](supabase/migrations/20261109000000_esquema_inicial.sql)
    2. [`supabase/migrations/20261110000000_consentimientos_y_avisos.sql`](supabase/migrations/20261110000000_consentimientos_y_avisos.sql) (consentimientos de cookies y protección de datos, arreglo de avisos y notificación de prueba)
+   3. [`supabase/migrations/20261111000000_fechas_intervencion.sql`](supabase/migrations/20261111000000_fechas_intervencion.sql) (fecha de inicio de la intervención y suscripción sincronizadas, recálculo de las semanas del diario y seguridad de los avisos)
 3. En **Authentication → URL Configuration**:
    - **Site URL**: `desayunoconchupetes://` (o la dirección fija de la web si la tienes). Es a donde lleva un enlace de correo cuando no se indica otra cosa; el valor por defecto (`http://localhost:3000`) provoca el error *Cannot GET /*.
    - **Redirect URLs**: `desayunoconchupetes://**`, `https://*.trycloudflare.com/**` y `http://localhost:8080/**` (y tu dominio, si lo tienes).

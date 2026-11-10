@@ -8,7 +8,7 @@ import { Badge, Button, Card, Chips, Empty, HeroHeader, Input, ListItem, Row, Sc
 import { useAdmin } from '@/context/admin';
 import { useAuth } from '@/context/auth';
 import { CHILD_STATUS, SUBSCRIPTION_STATUS } from '@/lib/config';
-import { addDays, ageLabel, formatDate, toISODate } from '@/lib/dates';
+import { addDays, ageLabel, formatDate, formatShortDate, toISODate } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
 import type { SubscriptionStatus } from '@/lib/types';
@@ -120,6 +120,16 @@ export default function FamiliaDetalle() {
               <Button small variant="secondary" icon="calendar-start" title={start ? `Inicio: ${formatDate(start)}` : 'Fecha de inicio'} onPress={() => setPick(pick === 'start' ? null : 'start')} />
               <Button small variant="secondary" icon="calendar-end" title={end ? `Fin: ${formatDate(end)}` : 'Fecha de fin'} onPress={() => setPick(pick === 'end' ? null : 'end')} />
             </Row>
+            {kids.some((k) => k.status === 'intervencion') ? (
+              <Txt variant="small" style={{ marginBottom: 10 }}>
+                🔗 La fecha de inicio está enlazada con la intervención:{' '}
+                {kids
+                  .filter((k) => k.status === 'intervencion')
+                  .map((k) => `${k.name} (${k.intervention_start ? formatShortDate(k.intervention_start) : 'sin fecha'})`)
+                  .join(', ')}
+                . Al cambiarla aquí se actualizan también la intervención, las semanas del diario y se avisa a la familia.
+              </Txt>
+            ) : null}
             {pick ? (
               <View style={{ marginBottom: 12 }}>
                 <DatePicker

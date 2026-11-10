@@ -119,12 +119,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!uid) return;
     reload();
-    // Tiempo real: plan, citas y avisos
+    // Tiempo real: plan, citas, avisos y cambios en los peques (fechas de intervención)
     const channel = supabase
       .channel(`familia-${uid}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sleep_plans' }, () => reload())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `family_id=eq.${uid}` }, () => reload())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` }, () => reload())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'children', filter: `family_id=eq.${uid}` }, () => reload())
       .subscribe();
     const appSub = AppState.addEventListener('change', (s) => s === 'active' && reload());
     const removeListener = addNotificationReceivedListener(() => reload());

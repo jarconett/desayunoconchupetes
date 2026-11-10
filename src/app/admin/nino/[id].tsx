@@ -167,6 +167,12 @@ export default function NinoDetalle() {
             Duración
           </Txt>
           <Chips options={[4, 5, 6, 7, 8].map((n) => ({ value: n, label: `${n} semanas` }))} value={weeks} onChange={setWeeks} />
+          {child.status === 'intervencion' ? (
+            <Txt variant="small" style={{ marginTop: 10 }}>
+              🔗 Al guardar se actualizan también la suscripción de la familia (inicio y fin) y las semanas del diario, y se avisa a la familia del
+              cambio.
+            </Txt>
+          ) : null}
           <Row style={{ marginTop: 14, flexWrap: 'wrap' }}>
             {child.status === 'entrevista' ? (
               <>
