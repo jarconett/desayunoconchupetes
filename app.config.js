@@ -28,7 +28,12 @@ function buildInfo() {
   }
 }
 
+// Versión que se muestra en la app (Perfil, Ajustes y pantalla de acceso) y en Android/iOS.
+// Se define aquí y no en app.json para no chocar con el app.json del PC de la asesora.
+const APP_VERSION = '1.1';
+
 module.exports = ({ config }) => {
+  config.version = APP_VERSION;
   config.extra = { ...config.extra, buildInfo: { ...buildInfo(), builtAt: new Date().toISOString() } };
 
   // Notificaciones: icono en silueta blanca (Android solo usa la transparencia)
