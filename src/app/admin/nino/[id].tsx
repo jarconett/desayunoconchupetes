@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { AppointmentCard } from '@/components/appointments';
 import { PathologyForm } from '@/components/pathology';
 import { DatePicker } from '@/components/pickers';
+import { DoneManualTasks, ManualTaskEditor } from '@/components/admin-tasks';
 import { PendingBanner, WeekIndicator } from '@/components/progress';
 import { Badge, Button, Card, Chips, Empty, HeroHeader, Input, ListItem, Row, Screen, SectionTitle, Txt, confirmAction, notify, Loading } from '@/components/ui';
 import { useAdmin } from '@/context/admin';
@@ -25,6 +26,7 @@ export default function NinoDetalle() {
   const [startDate, setStartDate] = useState<string>(toISODate(addDays(startOfWeek(new Date()), 7)));
   const [weeks, setWeeks] = useState(6);
   const [taskTitle, setTaskTitle] = useState('');
+  const [editTask, setEditTask] = useState<string | null>(null);
   const [consents, setConsents] = useState<{ version: string; signer_name: string | null; signer_dni: string | null; created_at: string }[] | null>(null);
 
   useEffect(() => {
@@ -144,7 +146,7 @@ export default function NinoDetalle() {
 
       {tasks.length ? (
         <View style={{ marginTop: 12 }}>
-          <PendingBanner tasks={tasks} title="Pendiente con este peque" />
+          <PendingBanner tasks={tasks} title="Pendiente con este peque" here={`/admin/nino/${child.id}`} onManualTask={setEditTask} />
         </View>
       ) : null}
 
@@ -303,7 +305,9 @@ export default function NinoDetalle() {
       <Card>
         <Input value={taskTitle} onChangeText={setTaskTitle} placeholder="Ej.: revisar siestas en la guardería" />
         <Button small title="Añadir tarea" icon="plus" onPress={addTask} disabled={!taskTitle.trim()} style={{ alignSelf: 'flex-start' }} />
+        <DoneManualTasks childId={child.id} onOpen={setEditTask} />
       </Card>
+      <ManualTaskEditor taskId={editTask} onClose={() => setEditTask(null)} />
     </Screen>
   );
 }

@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { DoneManualTasks, ManualTaskEditor } from '@/components/admin-tasks';
 import { AppointmentCard } from '@/components/appointments';
 import { DatePicker, SlotPicker } from '@/components/pickers';
 import { BellButton, Button, Card, Chips, HeroHeader, Icon, Input, Row, Screen, SectionTitle, Txt, confirmAction, notify } from '@/components/ui';
@@ -349,6 +350,7 @@ function AdminTaskList() {
   const adm = useAdmin();
   const [title, setTitle] = useState('');
   const [childId, setChildId] = useState<string | null>(null);
+  const [editTask, setEditTask] = useState<string | null>(null);
 
   const allTasks = adm.tasks;
   const groups = useMemo(() => {
@@ -364,8 +366,8 @@ function AdminTaskList() {
     adm.reload();
   };
 
-  const complete = async (taskId: string) => {
-    await supabase.from('admin_tasks').update({ done: true }).eq('id', taskId.replace('manual-', ''));
+  const complete = async (id: string) => {
+    await supabase.from('admin_tasks').update({ done: true }).eq('id', id);
     adm.reload();
   };
 
@@ -385,6 +387,9 @@ function AdminTaskList() {
         <Button title="Añadir" icon="plus" small style={{ alignSelf: 'flex-start', marginTop: 10 }} onPress={add} disabled={!title.trim()} />
       </Card>
 
+      <DoneManualTasks onOpen={setEditTask} />
+      <ManualTaskEditor taskId={editTask} onClose={() => setEditTask(null)} />
+
       {groups.length === 0 ? (
         <Card tint={colors.mint} style={{ marginTop: 14 }}>
           <Txt variant="h3">¡Todo al día! 🌙</Txt>
@@ -394,10 +399,14 @@ function AdminTaskList() {
         <View key={name}>
           <SectionTitle icon={name === 'General' ? 'clipboard-list-outline' : 'baby-face-outline'}>{name}</SectionTitle>
           {list.map((t) => (
-            <Card key={t.id} onPress={() => router.push(t.link as never)} style={{ marginBottom: 8, padding: 12 }}>
+            <Card
+              key={t.id}
+              // Las tareas manuales se gestionan en una ventana; el resto lleva a su pantalla (nunca a la Agenda otra vez)
+              onPress={t.manualId ? () => setEditTask(t.manualId!) : t.link === '/admin/agenda' ? undefined : () => router.push(t.link as never)}
+              style={{ marginBottom: 8, padding: 12 }}>
               <Row>
-                {t.id.startsWith('manual-') ? (
-                  <Pressable accessibilityLabel="Completar tarea" hitSlop={8} onPress={() => complete(t.id)}>
+                {t.manualId ? (
+                  <Pressable accessibilityLabel="Marcar como realizada" hitSlop={10} onPress={() => complete(t.manualId!)}>
                     <Icon name="checkbox-blank-circle-outline" color={colors.primary} />
                   </Pressable>
                 ) : (
@@ -409,7 +418,11 @@ function AdminTaskList() {
                   </Txt>
                   {t.detail ? <Txt variant="small">{t.detail}</Txt> : null}
                 </View>
-                <Icon name="chevron-right" color={colors.muted} />
+                {t.manualId ? (
+                  <Icon name="dots-horizontal" color={colors.muted} />
+                ) : t.link === '/admin/agenda' ? null : (
+                  <Icon name="chevron-right" color={colors.muted} />
+                )}
               </Row>
             </Card>
           ))}

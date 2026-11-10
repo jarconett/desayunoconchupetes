@@ -22,6 +22,8 @@ export interface PendingTask {
   priority: number; // menor = más importante
   childName?: string;
   childId?: string;
+  /** Tarea añadida a mano (se gestiona en una ventana, no navega) */
+  manualId?: string;
 }
 
 interface FamilyInput {
@@ -303,6 +305,7 @@ export function computeAdminTasks(d: AdminInput): PendingTask[] {
       detail: t.due_date ? `Para el ${t.due_date.split('-').reverse().join('/')}` : undefined,
       icon: 'checkbox-blank-circle-outline',
       link: c ? `/admin/nino/${c.id}` : '/admin/agenda',
+      manualId: t.id,
       priority: 4,
       childName: c?.name,
       childId: c?.id,

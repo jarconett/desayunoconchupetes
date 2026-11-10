@@ -70,7 +70,21 @@ export function WeekIndicator({ child, compact }: { child: Child; compact?: bool
 }
 
 /** Banner de tareas pendientes. */
-export function PendingBanner({ tasks, max = 6, title = 'Tareas pendientes' }: { tasks: PendingTask[]; max?: number; title?: string }) {
+export function PendingBanner({
+  tasks,
+  max = 6,
+  title = 'Tareas pendientes',
+  here,
+  onManualTask,
+}: {
+  tasks: PendingTask[];
+  max?: number;
+  title?: string;
+  /** Ruta de la pantalla actual: las tareas que llevan aquí no navegan (evita abrir la misma pantalla en bucle) */
+  here?: string;
+  /** Al pulsar una tarea añadida a mano (para marcarla, editarla o eliminarla) */
+  onManualTask?: (id: string) => void;
+}) {
   if (tasks.length === 0) {
     return (
       <Card tint={colors.mint}>
@@ -97,8 +111,12 @@ export function PendingBanner({ tasks, max = 6, title = 'Tareas pendientes' }: {
           </Txt>
         </View>
       </Row>
-      {tasks.slice(0, max).map((t) => (
-        <Card key={t.id} onPress={() => router.push(t.link as never)} style={{ marginBottom: 8, padding: 12 }}>
+      {tasks.slice(0, max).map((t) => {
+        const manual = !!t.manualId && !!onManualTask;
+        const isHere = !manual && !!here && t.link.split('?')[0] === here;
+        const onPress = manual ? () => onManualTask!(t.manualId!) : isHere ? undefined : () => router.push(t.link as never);
+        return (
+        <Card key={t.id} onPress={onPress} style={{ marginBottom: 8, padding: 12 }}>
           <Row>
             <IconBubble name={t.icon} size={38} bg={colors.bg} color={colors.primaryDark} />
             <View style={{ flex: 1 }}>
@@ -109,10 +127,11 @@ export function PendingBanner({ tasks, max = 6, title = 'Tareas pendientes' }: {
                 {[t.childName, t.detail].filter(Boolean).join(' · ')}
               </Txt>
             </View>
-            <Icon name="chevron-right" color={colors.muted} />
+            {manual ? <Icon name="dots-horizontal" color={colors.muted} /> : onPress ? <Icon name="chevron-right" color={colors.muted} /> : null}
           </Row>
         </Card>
-      ))}
+        );
+      })}
       {tasks.length > max ? (
         <Txt variant="small" center>
           y {tasks.length - max} más…
